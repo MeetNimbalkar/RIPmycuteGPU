@@ -3,23 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>VOLUMESHADER BM • GPU Stress Benchmark Suite</title>
+  <title>VOLUMESHADER BM • Split-Screen Multi-Topology Benchmark</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <!-- jsPDF for instant client-side PDF generation -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <style>
     :root {
       --bg: #000000;
       --surface: #080808;
-      --surface-sub: #121212;
+      --surface-sub: #111111;
       --border: #222222;
       --border-focus: #ffffff;
       --text: #ededed;
       --text-dim: #707070;
-      --text-dark: #333333;
+      --accent: #ffffff;
     }
 
     * {
@@ -40,16 +39,38 @@
       -webkit-user-select: none;
     }
 
-    #glcanvas {
+    /* Split Screen Canvas Container */
+    .viewport-container {
       position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
       z-index: 1;
-      cursor: crosshair;
       display: none;
+      grid-template-columns: 1fr;
       background: #000;
+    }
+    .viewport-container.split {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .viewport-box {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      border-right: 1px solid var(--border);
+    }
+    .viewport-box:last-child {
+      border-right: none;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
     }
 
     /* Top Progress Bar */
@@ -70,7 +91,7 @@
       transition: width 0.1s linear;
     }
 
-    /* Minimalist Pre-Flight Dashboard */
+    /* Pre-Flight Dashboard Overlay */
     .launcher-overlay {
       position: fixed;
       top: 0;
@@ -81,7 +102,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding: 20px;
       background: #000000;
     }
     .launcher-overlay.hidden {
@@ -91,20 +112,24 @@
     .launcher-panel {
       background: var(--surface);
       border: 1px solid var(--border);
-      max-width: 700px;
+      max-width: 960px;
       width: 100%;
-      padding: 32px;
+      padding: 24px 28px;
       display: flex;
       flex-direction: column;
-      gap: 22px;
+      gap: 16px;
+      max-height: 96vh;
+      overflow-y: auto;
     }
+    .launcher-panel::-webkit-scrollbar { width: 4px; }
+    .launcher-panel::-webkit-scrollbar-thumb { background: #222; }
 
     .panel-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 16px;
+      padding-bottom: 12px;
     }
     .title-area h1 {
       font-size: 1.05rem;
@@ -114,9 +139,9 @@
       font-family: 'JetBrains Mono', monospace;
     }
     .title-area p {
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       color: var(--text-dim);
-      margin-top: 4px;
+      margin-top: 3px;
       font-family: 'JetBrains Mono', monospace;
     }
     .spec-badge {
@@ -128,213 +153,252 @@
       text-transform: uppercase;
     }
 
-    .field-label {
-      font-size: 0.72rem;
-      font-family: 'JetBrains Mono', monospace;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-dim);
-      margin-bottom: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    /* Detected Hardware Banner */
+    /* Hardware Detection Banner */
     .hw-detect-banner {
       background: #000;
       border: 1px solid var(--border);
-      padding: 16px 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      padding: 10px 14px;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 12px;
     }
     .hw-detect-row {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 2px;
+      overflow: hidden;
     }
     .hw-detect-label { 
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.65rem;
+      font-size: 0.6rem;
       color: var(--text-dim); 
       text-transform: uppercase;
       letter-spacing: 0.08em;
     }
     .hw-detect-val { 
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.95rem;
+      font-size: 0.78rem;
       font-weight: 700;
       color: #ffffff; 
-      letter-spacing: -0.01em;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    /* Preset Matrix */
-    .presets-matrix {
+    .field-label {
+      font-size: 0.68rem;
+      font-family: 'JetBrains Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Screen Mode Switcher */
+    .mode-switch-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: 1fr 1fr;
       gap: 8px;
     }
-    .preset-card {
+    .mode-btn {
+      background: #000;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 10px;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+    }
+    .mode-btn.active {
+      border-color: var(--border-focus);
+      background: var(--surface-sub);
+      color: #fff;
+    }
+
+    /* Viewport Configurator Dual-Column Grid */
+    .viewport-config-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    .viewport-config-grid.dual {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .config-card {
       background: #000000;
       border: 1px solid var(--border);
-      padding: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .config-card-header {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #fff;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    /* 5 Topologies Grid */
+    .visual-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+    }
+    .visual-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 8px 4px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
+      gap: 2px;
+      text-align: center;
+      transition: border-color 0.15s ease;
+    }
+    .visual-card:hover {
+      border-color: #444;
+    }
+    .visual-card.active {
+      border-color: var(--border-focus);
+      background: #111111;
+    }
+    .visual-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .visual-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.55rem;
+      color: var(--text-dim);
+    }
+    .visual-card.active .visual-sub { color: #fff; }
+
+    /* 6 Difficulty Presets Grid */
+    .presets-matrix {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
       gap: 4px;
-      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .preset-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 8px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      transition: border-color 0.15s ease;
     }
     .preset-card:hover {
       border-color: #444;
-      background: #0a0a0a;
     }
     .preset-card.active {
       border-color: var(--border-focus);
       background: #111111;
     }
     .preset-name {
-      font-size: 0.78rem;
+      font-size: 0.7rem;
       font-weight: 600;
       color: var(--text);
     }
     .preset-detail {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.65rem;
+      font-size: 0.58rem;
       color: var(--text-dim);
     }
     .preset-card.active .preset-detail {
       color: var(--text);
     }
 
-    /* Hardware Selection Tiles & Lockout */
-    .hardware-columns {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-    .hw-selector-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-    .hw-selector-grid.locked {
-      pointer-events: none;
-      opacity: 0.35;
-      filter: grayscale(100%);
-    }
-
-    .hw-box {
-      background: #000000;
-      border: 1px solid var(--border);
-      padding: 10px 12px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-      transition: border-color 0.15s ease, background 0.15s ease;
-    }
-    .hw-box:hover {
-      border-color: #444;
-      background: #0a0a0a;
-    }
-    .hw-box.active {
-      border-color: var(--border-focus);
-      background: #111111;
-    }
-    .hw-icon {
-      width: 18px;
-      height: 18px;
-      object-fit: contain;
-      filter: grayscale(100%) brightness(1.2);
-    }
-    .hw-box.active .hw-icon {
-      filter: grayscale(0%) brightness(1);
-    }
-    .hw-title {
-      font-size: 0.75rem;
-      font-weight: 500;
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    .lock-tag {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.6rem;
-      color: #707070;
-      text-transform: uppercase;
-    }
-
-    /* Execution Controls */
+    /* Action Row */
     .control-row {
       display: grid;
-      grid-template-columns: 140px 1fr;
-      gap: 12px;
-      margin-top: 4px;
+      grid-template-columns: 140px 1fr 1fr;
+      gap: 10px;
       border-top: 1px solid var(--border);
-      padding-top: 20px;
+      padding-top: 14px;
     }
     .select-box {
       background: #000000;
       border: 1px solid var(--border);
       color: var(--text);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
-      padding: 0 12px;
+      font-size: 0.72rem;
+      padding: 0 8px;
       height: 42px;
       outline: none;
       cursor: pointer;
-    }
-    .select-box:focus {
-      border-color: var(--border-focus);
     }
     .btn-run {
       background: #ffffff;
       color: #000000;
       border: 1px solid #ffffff;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.06em;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      transition: background 0.15s ease, color 0.15s ease;
+      transition: background 0.15s ease;
     }
-    .btn-run:hover {
-      background: #cccccc;
-      border-color: #cccccc;
+    .btn-run:hover { background: #cccccc; border-color: #cccccc; }
+    .btn-view {
+      background: transparent;
+      color: #ffffff;
+      border: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.15s ease, background 0.15s ease;
     }
+    .btn-view:hover { border-color: #888; background: #0d0d0d; }
 
-    /* In-Run HUD */
+    /* Independent In-Run HUD (Per Viewport) */
     .run-hud {
-      position: fixed;
-      top: 24px;
-      left: 24px;
+      position: absolute;
+      top: 20px;
+      left: 20px;
       z-index: 10;
       background: rgba(0, 0, 0, 0.94);
       border: 1px solid var(--border);
-      padding: 18px 22px;
-      width: 360px;
-      display: none;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .run-hud.visible {
+      padding: 14px 18px;
+      width: 320px;
       display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
     .hud-title {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       color: var(--text-dim);
       text-transform: uppercase;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 8px;
+      padding-bottom: 6px;
       display: flex;
       justify-content: space-between;
     }
@@ -345,13 +409,13 @@
     }
     .hud-fps {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 2.8rem;
+      font-size: 2.5rem;
       font-weight: 800;
       line-height: 1;
     }
     .hud-fps-unit {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: var(--text-dim);
       margin-left: 4px;
     }
@@ -359,64 +423,48 @@
     .hud-telemetry-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px 12px;
+      gap: 6px 10px;
       border-top: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
-      padding: 10px 0;
+      padding: 8px 0;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
+      font-size: 0.68rem;
     }
-    .hud-tel-item {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    .hud-tel-lbl {
-      color: var(--text-dim);
-      font-size: 0.62rem;
-      text-transform: uppercase;
-    }
-    .hud-tel-val {
-      color: var(--text);
-      font-weight: 700;
-      font-size: 0.82rem;
-    }
+    .hud-tel-item { display: flex; flex-direction: column; gap: 2px; }
+    .hud-tel-lbl { color: var(--text-dim); font-size: 0.58rem; text-transform: uppercase; }
+    .hud-tel-val { color: var(--text); font-weight: 700; font-size: 0.78rem; }
 
-    .hud-stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      color: var(--text-dim);
+    /* Master Exit Control (HUD Overlay) */
+    .master-controls {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 50;
+      display: none;
     }
-    .hud-stats-grid span {
-      color: var(--text);
-    }
-    .btn-abort {
-      background: transparent;
+    .btn-abort-master {
+      background: #000;
       border: 1px solid var(--border);
-      color: var(--text-dim);
+      color: var(--text);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      padding: 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 10px 16px;
       cursor: pointer;
       text-transform: uppercase;
-      margin-top: 4px;
     }
-    .btn-abort:hover {
-      border-color: #888;
-      color: #fff;
+    .btn-abort-master:hover {
+      border-color: #fff;
     }
 
-    /* Complete Detailed Performance Report Modal */
+    /* Modal Evaluation Sheet */
     .modal-sheet {
       position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(0, 0, 0, 0.92);
+      background: rgba(0, 0, 0, 0.94);
       z-index: 1000;
       display: none;
       align-items: center;
@@ -451,7 +499,7 @@
     }
     .score-output {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 3.6rem;
+      font-size: 3.4rem;
       font-weight: 800;
       line-height: 1;
       text-align: center;
@@ -459,13 +507,12 @@
     }
     .eval-subtitle {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: var(--text-dim);
       text-align: center;
       text-transform: uppercase;
     }
 
-    /* Data Spec Table */
     .report-table {
       width: 100%;
       border-collapse: collapse;
@@ -485,12 +532,8 @@
       text-transform: uppercase;
       font-size: 0.65rem;
     }
-    .report-table td:nth-child(2), .report-table td:nth-child(3) {
-      text-align: right;
-    }
-    .report-table td strong {
-      color: #fff;
-    }
+    .report-table td:nth-child(2), .report-table td:nth-child(3) { text-align: right; }
+    .report-table td strong { color: #fff; }
 
     .btn-action-row {
       display: grid;
@@ -534,210 +577,284 @@
     <div class="progress-bar-fill" id="progressBar"></div>
   </div>
 
-  <canvas id="glcanvas"></canvas>
+  <!-- Master Split Screen Viewport Container -->
+  <div class="viewport-container" id="viewportContainer">
+    <!-- Viewport A (Left / Primary) -->
+    <div class="viewport-box" id="vpBoxA">
+      <canvas id="glcanvasA"></canvas>
+      <div class="run-hud" id="hudA">
+        <div class="hud-title">
+          <span id="hudTitleA">VIEWPORT 1</span>
+          <span id="hudSpecA">5i / 1002s</span>
+        </div>
+        <div class="hud-readout">
+          <div>
+            <span class="hud-fps" id="fpsReadoutA">0</span>
+            <span class="hud-fps-unit">FPS</span>
+          </div>
+          <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim);" id="ftReadoutA">
+            0.0 ms
+          </div>
+        </div>
+        <div class="hud-telemetry-grid">
+          <div class="hud-tel-item">
+            <span class="hud-tel-lbl">GPU Load</span>
+            <span class="hud-tel-val" id="gpuReadoutA">0%</span>
+          </div>
+          <div class="hud-tel-item">
+            <span class="hud-tel-lbl">CPU Dispatch</span>
+            <span class="hud-tel-val" id="cpuReadoutA">0%</span>
+          </div>
+          <div class="hud-tel-item">
+            <span class="hud-tel-lbl">VRAM Transfer</span>
+            <span class="hud-tel-val" id="vramReadoutA">0.00 GB/s</span>
+          </div>
+          <div class="hud-tel-item">
+            <span class="hud-tel-lbl">1% Low</span>
+            <span class="hud-tel-val" id="lowReadoutA">-- FPS</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
+    <!-- Viewport B (Right / Secondary - Active in Split Screen) -->
+    <div class="viewport-box" id="vpBoxB" style="display: none;">
+      <canvas id="glcanvasB"></canvas>
+      <div class="run-hud" id="hudB">
+        <div class="hud-title">
+          <span id="hudTitleB">VIEWPORT 2</span>
+          <span id="hudSpecB">5i / 1002s</span>
+        </div>
+        <div class="hud-readout">
+          <div>
+            <span class="hud-fps" id="fpsReadoutB">0</span>
+            <span class="hud-fps-unit">FPS</span>
+          </div>
+          <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim);" id="ftReadoutB">
+            0.0 ms
+          </div>
+        </div>
+        <div class="hud-telemetry-grid">
+          <div class="hud-tel-item">
+            <span class="hud-tel-lbl">GPU Load</span>
+            <span class="hud-tel-val" id="gpuReadoutB">0%</span>
+          </div>
+          <div class="hud-tel-item">
+            <span class="hud-tel-lbl">CPU Dispatch</span>
+            <span class="hud-tel-val" id="cpuReadoutB">0%</span>
+          </div>
+          <div class="hud-tel-item">
+            <span class="hud-tel-lbl">VRAM Transfer</span>
+            <span class="hud-tel-val" id="vramReadoutB">0.00 GB/s</span>
+          </div>
+          <div class="hud-tel-item">
+            <span class="hud-tel-lbl">1% Low</span>
+            <span class="hud-tel-val" id="lowReadoutB">-- FPS</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Master Floating Overlay Controls -->
+  <div class="master-controls" id="masterControls">
+    <button class="btn-abort-master" id="btnAbortMaster" onclick="abortExecution()">✕ Exit View</button>
+  </div>
+
+  <!-- High-Efficiency Pre-Flight Launch Dashboard -->
   <div class="launcher-overlay" id="launcherOverlay">
     <div class="launcher-panel">
       <div class="panel-header">
         <div class="title-area">
           <h1>VOLUMESHADER_BM</h1>
-          <p>WebGL Volumetric Stress Diagnostic</p>
+          <p>Split-Screen Dual Pipeline Diagnostic Suite</p>
         </div>
         <div class="spec-badge">SPEC 2026.1</div>
       </div>
 
-      <!-- Live Auto-Detected Hardware Readout -->
+      <!-- Live Hardware Detection Strip -->
       <div class="hw-detect-banner">
         <div class="hw-detect-row">
-          <span class="hw-detect-label">ADAPTER MODEL</span>
+          <span class="hw-detect-label">ADAPTER IDENTIFIER</span>
           <span class="hw-detect-val" id="detectedGpuModel">PROBING GPU INTERFACE...</span>
         </div>
         <div class="hw-detect-row">
-          <span class="hw-detect-label">PLATFORM SPECIFICATION</span>
-          <span class="hw-detect-val" id="detectedCpuArch">PROBING CPU THREADS & ARCHITECTURE...</span>
+          <span class="hw-detect-label">PLATFORM CONCURRENCY</span>
+          <span class="hw-detect-val" id="detectedCpuArch">PROBING CPU CORES...</span>
         </div>
       </div>
 
-      <!-- Presets Matrix -->
+      <!-- Screen Mode Selector -->
       <div>
-        <div class="field-label">
-          <span>Target Workload</span>
-          <span id="presetSpecs">5i • 1002s • 1x SSAA</span>
+        <div class="field-label">Screen Diagnostic Layout</div>
+        <div class="mode-switch-grid">
+          <button class="mode-btn active" id="modeBtnSingle" onclick="setScreenMode('single')">Single Viewport</button>
+          <button class="mode-btn" id="modeBtnDual" onclick="setScreenMode('dual')">Dual Split-Screen (Side-by-Side)</button>
         </div>
-        <div class="presets-matrix">
-          <div class="preset-card" onclick="setPreset(2, 250, 1, 0, 'Simple', '2i • 250s • 1x SSAA', this)">
-            <div class="preset-name">Simple</div>
-            <div class="preset-detail">2i / 250 steps</div>
+      </div>
+
+      <!-- Configurator Grid (Supports Dual Topologies and Presets Side-by-Side) -->
+      <div class="viewport-config-grid" id="vpConfigGrid">
+        <!-- Configuration Card Primary (Viewport A) -->
+        <div class="config-card" id="cardA">
+          <div class="config-card-header" id="labelCardA">Viewport 1 Configuration</div>
+
+          <div>
+            <div class="field-label">Volumetric Topology</div>
+            <div class="visual-grid">
+              <div class="visual-card active" onclick="setVpVisual('A', 0, 'Mandelbulb', this)">
+                <div class="visual-title">Mandel</div>
+                <div class="visual-sub">Sphere</div>
+              </div>
+              <div class="visual-card" onclick="setVpVisual('A', 1, 'Menger Cube', this)">
+                <div class="visual-title">Menger</div>
+                <div class="visual-sub">Cube</div>
+              </div>
+              <div class="visual-card" onclick="setVpVisual('A', 2, 'Julia 4D', this)">
+                <div class="visual-title">Julia</div>
+                <div class="visual-sub">4D Slice</div>
+              </div>
+              <div class="visual-card" onclick="setVpVisual('A', 3, 'Kleinian IFS', this)">
+                <div class="visual-title">Klein</div>
+                <div class="visual-sub">Matrix</div>
+              </div>
+              <div class="visual-card" onclick="setVpVisual('A', 4, 'Nebula', this)">
+                <div class="visual-title">Nebula</div>
+                <div class="visual-sub">Smoke</div>
+              </div>
+            </div>
           </div>
-          <div class="preset-card active" onclick="setPreset(5, 1002, 1, 0, 'Standard', '5i • 1002s • 1x SSAA', this)">
-            <div class="preset-name">Standard</div>
-            <div class="preset-detail">5i / 1002 steps</div>
+
+          <div>
+            <div class="field-label">Stress Difficulty Preset</div>
+            <div class="presets-matrix">
+              <div class="preset-card" onclick="setVpPreset('A', 2, 250, 1, 0, 'Simple', this)">
+                <div class="preset-name">Simple</div>
+                <div class="preset-detail">2i / 250s</div>
+              </div>
+              <div class="preset-card active" onclick="setVpPreset('A', 5, 1002, 1, 0, 'Standard', this)">
+                <div class="preset-name">Standard</div>
+                <div class="preset-detail">5i / 1002s</div>
+              </div>
+              <div class="preset-card" onclick="setVpPreset('A', 7, 1500, 1, 0, 'Advanced', this)">
+                <div class="preset-name">Advanced</div>
+                <div class="preset-detail">7i / 1500s</div>
+              </div>
+              <div class="preset-card" onclick="setVpPreset('A', 9, 2000, 1, 0, 'Extreme', this)">
+                <div class="preset-name">Extreme</div>
+                <div class="preset-detail">9i / 2000s</div>
+              </div>
+              <div class="preset-card" onclick="setVpPreset('A', 25, 3000, 2, 1, 'Ultra Ext.', this)">
+                <div class="preset-name">Ultra Ext.</div>
+                <div class="preset-detail">25i / 2x AA</div>
+              </div>
+              <div class="preset-card" onclick="setVpPreset('A', 45, 4500, 4, 1, 'Ultra Ext.+', this)">
+                <div class="preset-name">Ultra Ext.+</div>
+                <div class="preset-detail">45i / 4x AA</div>
+              </div>
+            </div>
           </div>
-          <div class="preset-card" onclick="setPreset(7, 1500, 1, 0, 'Advanced', '7i • 1500s • 1x SSAA', this)">
-            <div class="preset-name">Advanced</div>
-            <div class="preset-detail">7i / 1500 steps</div>
+        </div>
+
+        <!-- Configuration Card Secondary (Viewport B - Active in Dual Mode) -->
+        <div class="config-card" id="cardB" style="display: none;">
+          <div class="config-card-header">Viewport 2 Configuration</div>
+
+          <div>
+            <div class="field-label">Volumetric Topology</div>
+            <div class="visual-grid">
+              <div class="visual-card" onclick="setVpVisual('B', 0, 'Mandelbulb', this)">
+                <div class="visual-title">Mandel</div>
+                <div class="visual-sub">Sphere</div>
+              </div>
+              <div class="visual-card" onclick="setVpVisual('B', 1, 'Menger Cube', this)">
+                <div class="visual-title">Menger</div>
+                <div class="visual-sub">Cube</div>
+              </div>
+              <div class="visual-card" onclick="setVpVisual('B', 2, 'Julia 4D', this)">
+                <div class="visual-title">Julia</div>
+                <div class="visual-sub">4D Slice</div>
+              </div>
+              <div class="visual-card active" onclick="setVpVisual('B', 3, 'Kleinian IFS', this)">
+                <div class="visual-title">Klein</div>
+                <div class="visual-sub">Matrix</div>
+              </div>
+              <div class="visual-card" onclick="setVpVisual('B', 4, 'Nebula', this)">
+                <div class="visual-title">Nebula</div>
+                <div class="visual-sub">Smoke</div>
+              </div>
+            </div>
           </div>
-          <div class="preset-card" onclick="setPreset(9, 2000, 1, 0, 'Extreme', '9i • 2000s • 1x SSAA', this)">
-            <div class="preset-name">Extreme</div>
-            <div class="preset-detail">9i / 2000 steps</div>
-          </div>
-          <div class="preset-card" onclick="setPreset(25, 3000, 2, 1, 'Ultra Ext.', '25i • 3000s • 2x SSAA', this)">
-            <div class="preset-name">Ultra Ext.</div>
-            <div class="preset-detail">25i / 2x SSAA</div>
-          </div>
-          <div class="preset-card" onclick="setPreset(45, 4500, 4, 1, 'Ultra Ext.+', '45i • 4500s • 4x SSAA', this)">
-            <div class="preset-name">Ultra Ext.+</div>
-            <div class="preset-detail">45i / 4x SSAA</div>
+
+          <div>
+            <div class="field-label">Stress Difficulty Preset</div>
+            <div class="presets-matrix">
+              <div class="preset-card" onclick="setVpPreset('B', 2, 250, 1, 0, 'Simple', this)">
+                <div class="preset-name">Simple</div>
+                <div class="preset-detail">2i / 250s</div>
+              </div>
+              <div class="preset-card" onclick="setVpPreset('B', 5, 1002, 1, 0, 'Standard', this)">
+                <div class="preset-name">Standard</div>
+                <div class="preset-detail">5i / 1002s</div>
+              </div>
+              <div class="preset-card" onclick="setVpPreset('B', 7, 1500, 1, 0, 'Advanced', this)">
+                <div class="preset-name">Advanced</div>
+                <div class="preset-detail">7i / 1500s</div>
+              </div>
+              <div class="preset-card" onclick="setVpPreset('B', 9, 2000, 1, 0, 'Extreme', this)">
+                <div class="preset-name">Extreme</div>
+                <div class="preset-detail">9i / 2000s</div>
+              </div>
+              <div class="preset-card active" onclick="setVpPreset('B', 25, 3000, 2, 1, 'Ultra Ext.', this)">
+                <div class="preset-name">Ultra Ext.</div>
+                <div class="preset-detail">25i / 2x AA</div>
+              </div>
+              <div class="preset-card" onclick="setVpPreset('B', 45, 4500, 4, 1, 'Ultra Ext.+', this)">
+                <div class="preset-name">Ultra Ext.+</div>
+                <div class="preset-detail">45i / 4x AA</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Hardware Brand Pickers -->
-      <div class="hardware-columns">
-        <div>
-          <div class="field-label">
-            <span>GPU Architecture</span>
-            <span class="lock-tag" id="gpuLockStatus">[AUTO]</span>
-          </div>
-          <div class="hw-selector-grid" id="gpuSelectorGrid">
-            <div class="hw-box" id="gpuBoxNvidia" onclick="selectGPU('NVIDIA', this)">
-              <img src="nvidia.webp" class="hw-icon" onerror="this.src='https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/nvidia.svg'" alt="NVIDIA">
-              <span class="hw-title">NVIDIA</span>
-            </div>
-            <div class="hw-box" id="gpuBoxAmd" onclick="selectGPU('AMD', this)">
-              <img src="amd.webp" class="hw-icon" onerror="this.src='https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/amd.svg'" alt="AMD">
-              <span class="hw-title">AMD</span>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div class="field-label">
-            <span>CPU Platform</span>
-            <span class="lock-tag" id="cpuLockStatus">[AUTO]</span>
-          </div>
-          <div class="hw-selector-grid" id="cpuSelectorGrid">
-            <div class="hw-box" id="cpuBoxIntel" onclick="selectCPU('Intel', this)">
-              <img src="intel.webp" class="hw-icon" onerror="this.src='https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/intel.svg'" alt="Intel">
-              <span class="hw-title">Intel</span>
-            </div>
-            <div class="hw-box" id="cpuBoxAmd" onclick="selectCPU('AMD', this)">
-              <img src="amd.webp" class="hw-icon" onerror="this.src='https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/amd.svg'" alt="AMD">
-              <span class="hw-title">AMD</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Control / Action Row -->
+      <!-- Execution Controls Row -->
       <div class="control-row">
         <select class="select-box" id="runDuration">
-          <option value="15">15 Seconds</option>
-          <option value="30">30 Seconds</option>
-          <option value="60">60 Seconds</option>
+          <option value="15">15s Run</option>
+          <option value="30">30s Run</option>
+          <option value="60">60s Run</option>
         </select>
-        <button class="btn-run" onclick="executeBenchmark()">Execute Benchmark</button>
+        <button class="btn-run" onclick="executeSuite(true)">Execute Benchmark</button>
+        <button class="btn-view" onclick="executeSuite(false)">Live Shader View</button>
       </div>
     </div>
-  </div>
-
-  <!-- Telemetry In-Run HUD with Usage & Bandwidth -->
-  <div class="run-hud" id="runHud">
-    <div class="hud-title">
-      <span id="hudPresetTitle">STANDARD WORKLOAD</span>
-      <span id="hudHwTag">NV / INTEL</span>
-    </div>
-    <div class="hud-readout">
-      <div>
-        <span class="hud-fps" id="fpsReadout">0</span>
-        <span class="hud-fps-unit">FPS</span>
-      </div>
-      <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim);" id="ftReadout">
-        0.0 ms
-      </div>
-    </div>
-
-    <!-- Real-time Hardware Telemetry -->
-    <div class="hud-telemetry-grid">
-      <div class="hud-tel-item">
-        <span class="hud-tel-lbl">GPU Load</span>
-        <span class="hud-tel-val" id="gpuUsageReadout">0%</span>
-      </div>
-      <div class="hud-tel-item">
-        <span class="hud-tel-lbl">CPU Thread</span>
-        <span class="hud-tel-val" id="cpuUsageReadout">0%</span>
-      </div>
-      <div class="hud-tel-item">
-        <span class="hud-tel-lbl">VRAM Transfer</span>
-        <span class="hud-tel-val" id="ramTransferReadout">0.00 GB/s</span>
-      </div>
-      <div class="hud-tel-item">
-        <span class="hud-tel-lbl">Thermal Sensor</span>
-        <span class="hud-tel-val" style="color: var(--text-dim); font-size: 0.72rem;">N/A (Sandboxed)</span>
-      </div>
-    </div>
-
-    <div class="hud-stats-grid">
-      <div>1% Low: <span id="low1Readout">--</span></div>
-      <div>Variance: <span id="stabilityReadout">--</span></div>
-    </div>
-    <button class="btn-abort" onclick="abortBenchmark()">Abort Test</button>
   </div>
 
   <!-- Performance Evaluation Report Modal -->
   <div class="modal-sheet" id="evalModal">
     <div class="modal-box">
       <div class="modal-header">
-        <span>Diagnostic Evaluation Report</span>
+        <span>Benchmark Evaluation Report</span>
         <span id="reportTimestamp">--</span>
       </div>
 
       <div>
-        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-align: center; text-transform: uppercase;">Benchmark Score</div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-align: center; text-transform: uppercase;">Overall Benchmark Score</div>
         <div class="score-output" id="evalScore">0</div>
-        <div class="eval-subtitle" id="evalHwString">NVIDIA • Intel • Standard</div>
+        <div class="eval-subtitle" id="evalHwString">--</div>
       </div>
 
-      <!-- Performance Telemetry Spec Sheet -->
       <table class="report-table">
         <thead>
           <tr>
             <th>Telemetry Category</th>
-            <th>Peak / Max</th>
-            <th>Min / Baseline</th>
+            <th>Primary Viewport</th>
+            <th>Secondary Viewport</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <td>Framerate (FPS)</td>
-            <td><strong id="repMaxFps">0 FPS</strong></td>
-            <td><strong id="repMinFps">0 FPS</strong></td>
-          </tr>
-          <tr>
-            <td>Average Framerate & 1% Low</td>
-            <td><strong id="repAvgFps">0 FPS (Avg)</strong></td>
-            <td><strong id="rep1LowFps">0 FPS (1% Low)</strong></td>
-          </tr>
-          <tr>
-            <td>GPU Core Saturation</td>
-            <td><strong id="repMaxGpu">0%</strong></td>
-            <td><strong id="repMinGpu">0%</strong></td>
-          </tr>
-          <tr>
-            <td>CPU Thread Saturation</td>
-            <td><strong id="repMaxCpu">0%</strong></td>
-            <td><strong id="repMinCpu">0%</strong></td>
-          </tr>
-          <tr>
-            <td>VRAM Memory Bandwidth</td>
-            <td><strong id="repMaxRam">0.00 GB/s</strong></td>
-            <td><strong id="repMinRam">0.00 GB/s</strong></td>
-          </tr>
-          <tr>
-            <td>Estimated Thermals</td>
-            <td><strong id="repMaxTemp">~68°C - 74°C</strong></td>
-            <td><strong id="repMinTemp">~42°C (Idle)</strong></td>
-          </tr>
+        <tbody id="evalReportBody">
+          <!-- Dynamically Injected -->
         </tbody>
       </table>
 
@@ -749,118 +866,143 @@
   </div>
 
   <script>
-    const canvas = document.getElementById('glcanvas');
-    const gl = canvas.getContext('webgl', { powerPreference: "high-performance", antialias: false });
-
-    let detectedGpuString = "Generic GPU";
+    // System & Hardware State
+    let detectedGpuString = "Generic WebGL GPU";
     let detectedCpuString = "x86 Platform";
-    let selectedPreset = 'Standard';
-    let currentIters = 5;
-    let currentSteps = 1002;
-    let currentAA = 1;
-    let currentShadows = 0;
-    let selectedGpu = 'NVIDIA';
-    let selectedCpu = 'Intel';
+    let isDualMode = false;
 
-    // Auto-detect Hardware
+    // Viewport A State
+    const stateA = {
+      visualId: 0,
+      visualName: 'Mandelbulb',
+      presetName: 'Standard',
+      iters: 5,
+      steps: 1002,
+      aa: 1,
+      shadows: 0,
+      rotX: 0,
+      rotY: 0,
+      zoom: 2.4,
+      isDragging: false,
+      lastX: 0,
+      lastY: 0,
+      fpsHistory: [],
+      gpuHistory: [],
+      cpuHistory: [],
+      vramHistory: [],
+      rollingBuffer: [],
+      lastTime: 0,
+      lastFpsUpdate: 0,
+      frameCounter: 0,
+      jsTimeAccum: 0
+    };
+
+    // Viewport B State (Secondary Pipeline)
+    const stateB = {
+      visualId: 3,
+      visualName: 'Kleinian IFS',
+      presetName: 'Ultra Ext.',
+      iters: 25,
+      steps: 3000,
+      aa: 2,
+      shadows: 1,
+      rotX: 0,
+      rotY: 0,
+      zoom: 2.4,
+      isDragging: false,
+      lastX: 0,
+      lastY: 0,
+      fpsHistory: [],
+      gpuHistory: [],
+      cpuHistory: [],
+      vramHistory: [],
+      rollingBuffer: [],
+      lastTime: 0,
+      lastFpsUpdate: 0,
+      frameCounter: 0,
+      jsTimeAccum: 0
+    };
+
+    // WebGL Canvas Contexts
+    const canvasA = document.getElementById('glcanvasA');
+    const glA = canvasA.getContext('webgl', { powerPreference: "high-performance", antialias: false });
+
+    const canvasB = document.getElementById('glcanvasB');
+    const glB = canvasB.getContext('webgl', { powerPreference: "high-performance", antialias: false });
+
     async function autoDetectHardware() {
-      let gpuDetected = false;
-      const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+      const dbg = glA.getExtension('WEBGL_debug_renderer_info');
       if (dbg) {
-        const raw = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
+        const raw = glA.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
         if (raw && raw.length > 2) {
           detectedGpuString = raw
             .replace(/Direct3D.*|OpenGL.*|\(R\)|\(TM\)/g, '')
             .replace(/ANGLE \(/g, '').replace(/\)/g, '')
             .replace(/vs_\d+_\d+.*|ps_\d+_\d+.*/g, '')
             .trim();
-          gpuDetected = true;
         }
-      }
-
-      const gpuGrid = document.getElementById('gpuSelectorGrid');
-      const gpuLock = document.getElementById('gpuLockStatus');
-
-      if (gpuDetected) {
-        gpuGrid.classList.add('locked');
-        gpuLock.innerText = '[LOCKED]';
-
-        const gpuUpper = detectedGpuString.toUpperCase();
-        if (gpuUpper.includes('AMD') || gpuUpper.includes('RADEON')) {
-          selectGPU('AMD', document.getElementById('gpuBoxAmd'));
-        } else {
-          selectGPU('NVIDIA', document.getElementById('gpuBoxNvidia'));
-        }
-      } else {
-        gpuGrid.classList.remove('locked');
-        gpuLock.innerText = '[OVERRIDE ACTIVE]';
-        detectedGpuString = "UNMASKED DRIVER QUERY FAILED";
-        selectGPU('NVIDIA', document.getElementById('gpuBoxNvidia'));
       }
       document.getElementById('detectedGpuModel').innerText = detectedGpuString;
 
-      const cores = navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} Logical Cores` : null;
-      let arch = null;
-
+      const cores = navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} Logical Cores` : 'Multi-Core';
+      let arch = 'x86_64';
       if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
         try {
           const uaData = await navigator.userAgentData.getHighEntropyValues(['architecture', 'bitness']);
           if (uaData.architecture) arch = `${uaData.architecture} ${uaData.bitness || '64'}-bit`;
         } catch (e) {}
       }
-
-      const cpuGrid = document.getElementById('cpuSelectorGrid');
-      const cpuLock = document.getElementById('cpuLockStatus');
-
-      if (cores || arch) {
-        detectedCpuString = `${cores || 'Multi-Core'} (${arch || 'x86_64 Architecture'})`;
-        cpuGrid.classList.add('locked');
-        cpuLock.innerText = '[LOCKED]';
-        selectCPU('Intel', document.getElementById('cpuBoxIntel'));
-      } else {
-        cpuGrid.classList.remove('locked');
-        cpuLock.innerText = '[OVERRIDE ACTIVE]';
-        detectedCpuString = "HARDWARE CONCURRENCY UNRESOLVED";
-        selectCPU('Intel', document.getElementById('cpuBoxIntel'));
-      }
-
+      detectedCpuString = `${cores} (${arch})`;
       document.getElementById('detectedCpuArch').innerText = detectedCpuString;
     }
 
-    function setPreset(iters, steps, aa, shadows, name, specText, element) {
-      document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
-      element.classList.add('active');
-      currentIters = iters;
-      currentSteps = steps;
-      currentAA = aa;
-      currentShadows = shadows;
-      selectedPreset = name;
-      document.getElementById('presetSpecs').innerText = specText;
+    function setScreenMode(mode) {
+      isDualMode = (mode === 'dual');
+      document.getElementById('modeBtnSingle').classList.toggle('active', !isDualMode);
+      document.getElementById('modeBtnDual').classList.toggle('active', isDualMode);
+
+      document.getElementById('vpConfigGrid').classList.toggle('dual', isDualMode);
+      document.getElementById('cardB').style.display = isDualMode ? 'flex' : 'none';
+      document.getElementById('labelCardA').innerText = isDualMode ? 'Viewport 1 (Left)' : 'Viewport 1 Configuration';
     }
 
-    function selectGPU(brand, element) {
-      document.querySelectorAll('#gpuBoxNvidia, #gpuBoxAmd').forEach(b => b.classList.remove('active'));
+    function setVpVisual(vp, id, name, element) {
+      const targetState = (vp === 'A') ? stateA : stateB;
+      targetState.visualId = id;
+      targetState.visualName = name;
+
+      element.parentElement.querySelectorAll('.visual-card').forEach(c => c.classList.remove('active'));
       element.classList.add('active');
-      selectedGpu = brand;
     }
 
-    function selectCPU(brand, element) {
-      document.querySelectorAll('#cpuBoxIntel, #cpuBoxAmd').forEach(b => b.classList.remove('active'));
+    function setVpPreset(vp, iters, steps, aa, shadows, name, element) {
+      const targetState = (vp === 'A') ? stateA : stateB;
+      targetState.iters = iters;
+      targetState.steps = steps;
+      targetState.aa = aa;
+      targetState.shadows = shadows;
+      targetState.presetName = name;
+
+      element.parentElement.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
       element.classList.add('active');
-      selectedCpu = brand;
     }
 
-    const quad = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, quad, gl.STATIC_DRAW);
-
+    // Quad Vertex Geometry
+    const quadVertices = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
     const vsSource = `
       attribute vec2 a_pos;
       void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
     `;
 
-    function buildFragmentShader(iterations, maxSteps, aaSamples, useShadows) {
+    function initGLContext(gl) {
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, quadVertices, gl.STATIC_DRAW);
+    }
+    initGLContext(glA);
+    initGLContext(glB);
+
+    function buildFragmentShader(iterations, maxSteps, aaSamples, useShadows, visualId) {
       return `
         precision highp float;
         uniform vec2 u_resolution;
@@ -872,8 +1014,9 @@
         #define MAX_STEPS ${maxSteps}
         #define AA_SAMPLES ${aaSamples}
         #define USE_SHADOWS ${useShadows}
+        #define VISUAL_TYPE ${visualId}
 
-        float map(vec3 pos) {
+        float mapMandelbulb(vec3 pos) {
           vec3 z = pos;
           float dr = 1.0;
           float r = 0.0;
@@ -895,6 +1038,112 @@
             z += pos;
           }
           return 0.5 * log(r) * r / dr;
+        }
+
+        float sdBox(vec3 p, vec3 b) {
+          vec3 q = abs(p) - b;
+          return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+        }
+
+        float mapMenger(vec3 p) {
+          float d = sdBox(p, vec3(1.0));
+          float s = 1.0;
+          for (int m = 0; m < 5; m++) {
+            if (m >= ITERATIONS) break;
+            vec3 a = mod(p * s, 2.0) - 1.0;
+            s *= 3.0;
+            vec3 r = abs(1.0 - 3.0 * abs(a));
+            float da = max(r.x, r.y);
+            float db = max(r.y, r.z);
+            float dc = max(r.z, r.x);
+            float c = (min(da, min(db, dc)) - 1.0) / s;
+            d = max(d, c);
+          }
+          return d;
+        }
+
+        vec4 qSqr(vec4 q) {
+          return vec4(q.x * q.x - dot(q.yzw, q.yzw), 2.0 * q.x * q.yzw);
+        }
+
+        float mapJulia4D(vec3 p) {
+          vec4 z = vec4(p, 0.0);
+          vec4 c = vec4(-0.2, 0.6, 0.2, 0.2) + 0.1 * sin(u_time * 0.2);
+          vec4 dz = vec4(1.0, 0.0, 0.0, 0.0);
+          float r = 0.0;
+          for (int i = 0; i < ITERATIONS; i++) {
+            dz = 2.0 * vec4(z.x * dz.x - dot(z.yzw, dz.yzw), z.x * dz.yzw + dz.x * z.yzw + cross(z.yzw, dz.yzw));
+            z = qSqr(z) + c;
+            r = dot(z, z);
+            if (r > 4.0) break;
+          }
+          return 0.25 * sqrt(r) * log(r) / length(dz);
+        }
+
+        float mapKleinian(vec3 p) {
+          vec3 offset = vec3(1.15, 0.95, 0.85);
+          float scale = 1.65;
+          float dr = 1.0;
+          for (int i = 0; i < 18; i++) {
+            if (i >= ITERATIONS) break;
+            p = clamp(p, -offset, offset) * 2.0 - p;
+            float r2 = dot(p, p);
+            if (r2 < 0.25) {
+              float k = 1.0 / 0.25;
+              p *= k;
+              dr *= k;
+            } else if (r2 < 1.0) {
+              float k = 1.0 / r2;
+              p *= k;
+              dr *= k;
+            }
+            p = p * scale + offset;
+            dr = dr * abs(scale) + 1.0;
+          }
+          return (length(p) - 1.2) / abs(dr);
+        }
+
+        float hash(vec3 p) {
+          p = fract(p * 0.3183099 + 0.1);
+          p *= 17.0;
+          return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+        }
+
+        float noise(vec3 x) {
+          vec3 i = floor(x);
+          vec3 f = fract(x);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(
+            mix(mix(hash(i + vec3(0,0,0)), hash(i + vec3(1,0,0)), f.x),
+                mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y),
+            mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x),
+                mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y), f.z);
+        }
+
+        float fbm(vec3 p) {
+          float f = 0.0;
+          float amp = 0.5;
+          for (int i = 0; i < 6; i++) {
+            if (i >= ITERATIONS) break;
+            f += amp * noise(p);
+            p = p * 2.02 + vec3(1.2, 2.4, 3.6);
+            amp *= 0.5;
+          }
+          return f;
+        }
+
+        float map(vec3 pos) {
+          #if VISUAL_TYPE == 0
+            return mapMandelbulb(pos);
+          #elif VISUAL_TYPE == 1
+            return mapMenger(pos);
+          #elif VISUAL_TYPE == 2
+            return mapJulia4D(pos);
+          #elif VISUAL_TYPE == 3
+            return mapKleinian(pos);
+          #else
+            return length(pos) - 1.6;
+          #endif
         }
 
         vec3 calcNormal(vec3 pos, float t) {
@@ -947,59 +1196,95 @@
           vec3 vv = normalize(cross(uu, ww));
           vec3 rd = normalize(uv.x * uu + uv.y * vv + 1.6 * ww);
 
-          float b = dot(ro, rd);
-          float c = dot(ro, ro) - 2.8;
-          float h = b * b - c;
-          
-          float t = 0.0;
-          float tmax = 5.0;
-          if (h > 0.0) {
-            t = max(0.0, -b - sqrt(h));
-            tmax = -b + sqrt(h);
-          }
-
-          float hit = 0.0;
-          for (int i = 0; i < MAX_STEPS; i++) {
-            vec3 p = ro + rd * t;
-            float d = map(p);
-
-            if (d < 0.0008 * t) {
-              hit = 1.0;
-              break;
-            }
-            if (t > tmax || t > 5.0) break;
-            t += d * 0.75;
-          }
-
           vec3 bg = mix(vec3(0.01, 0.01, 0.02), vec3(0.03, 0.04, 0.06), uv.y + 0.5);
-          vec3 color = bg;
 
-          if (hit > 0.5) {
-            vec3 p = ro + rd * t;
-            vec3 n = calcNormal(p, t);
+          #if VISUAL_TYPE == 4
+            float dist = length(ro);
+            float tmin = max(0.0, dist - 1.8);
+            float tmax = dist + 1.8;
+            float stepSize = (tmax - tmin) / float(MAX_STEPS);
+            float t = tmin;
+            vec4 colAcc = vec4(0.0);
 
-            vec3 keyLight = normalize(vec3(1.5, 2.5, 1.5));
-            vec3 fillLight = normalize(vec3(-1.5, -1.0, -1.0));
+            for (int i = 0; i < MAX_STEPS; i++) {
+              vec3 p = ro + rd * t;
+              if (length(p) < 1.6) {
+                float dens = fbm(p * 2.2 + vec3(0.0, u_time * 0.1, 0.0));
+                dens = clamp(dens * 1.8 - 0.45, 0.0, 1.0);
 
-            float diffKey = max(dot(n, keyLight), 0.0);
-            float diffFill = max(dot(n, fillLight), 0.0) * 0.35;
-            float fresnel = pow(clamp(1.0 + dot(n, rd), 0.0, 1.0), 3.0);
+                if (dens > 0.01) {
+                  vec3 emission = 0.55 + 0.45 * cos(vec3(0.1, 0.5, 0.9) + length(p) * 2.4 + dens * 2.0);
+                  vec4 col = vec4(emission * dens, dens * 0.12);
+                  col.rgb *= col.a;
+                  colAcc += col * (1.0 - colAcc.a);
+                  if (colAcc.a > 0.98) break;
+                }
+              }
+              t += stepSize;
+            }
+            return mix(bg, colAcc.rgb, colAcc.a);
 
-            float shadow = calcShadow(p + n * 0.003, keyLight, 0.01, 2.5);
-            float ao = calcAO(p, n);
-
-            vec3 baseColor = 0.55 + 0.45 * cos(vec3(0.1, 0.55, 0.95) + length(p) * 2.8);
+          #else
+            float b = dot(ro, rd);
+            float c = dot(ro, ro) - 3.5;
+            float h = b * b - c;
             
-            vec3 hal = normalize(keyLight - rd);
-            float spec = pow(max(dot(n, hal), 0.0), 16.0) * 0.6;
+            float t = 0.0;
+            float tmax = 5.5;
+            if (h > 0.0) {
+              t = max(0.0, -b - sqrt(h));
+              tmax = -b + sqrt(h);
+            }
 
-            color = baseColor * (diffKey * shadow + diffFill + 0.12) * ao;
-            color += vec3(0.3, 0.7, 1.0) * fresnel * 0.6 * ao;
-            color += vec3(1.0) * spec * shadow;
+            float hit = 0.0;
+            for (int i = 0; i < MAX_STEPS; i++) {
+              vec3 p = ro + rd * t;
+              float d = map(p);
 
-            color = mix(color, bg, 1.0 - exp(-0.06 * t * t));
-          }
-          return color;
+              if (d < 0.0006 * t) {
+                hit = 1.0;
+                break;
+              }
+              if (t > tmax || t > 5.5) break;
+              t += d * 0.65;
+            }
+
+            vec3 color = bg;
+            if (hit > 0.5) {
+              vec3 p = ro + rd * t;
+              vec3 n = calcNormal(p, t);
+
+              vec3 keyLight = normalize(vec3(1.5, 2.5, 1.5));
+              vec3 fillLight = normalize(vec3(-1.5, -1.0, -1.0));
+
+              float diffKey = max(dot(n, keyLight), 0.0);
+              float diffFill = max(dot(n, fillLight), 0.0) * 0.35;
+              float fresnel = pow(clamp(1.0 + dot(n, rd), 0.0, 1.0), 3.0);
+
+              float shadow = calcShadow(p + n * 0.003, keyLight, 0.01, 2.5);
+              float ao = calcAO(p, n);
+
+              vec3 paletteOffset = vec3(0.1, 0.55, 0.95);
+              #if VISUAL_TYPE == 1
+                paletteOffset = vec3(0.8, 0.3, 0.1);
+              #elif VISUAL_TYPE == 2
+                paletteOffset = vec3(0.7, 0.1, 0.9);
+              #elif VISUAL_TYPE == 3
+                paletteOffset = vec3(0.9, 0.4, 0.1);
+              #endif
+
+              vec3 baseColor = 0.55 + 0.45 * cos(paletteOffset + length(p) * 2.2);
+              vec3 hal = normalize(keyLight - rd);
+              float spec = pow(max(dot(n, hal), 0.0), 16.0) * 0.6;
+
+              color = baseColor * (diffKey * shadow + diffFill + 0.12) * ao;
+              color += vec3(0.3, 0.7, 1.0) * fresnel * 0.6 * ao;
+              color += vec3(1.0) * spec * shadow;
+
+              color = mix(color, bg, 1.0 - exp(-0.06 * t * t));
+            }
+            return color;
+          #endif
         }
 
         void main() {
@@ -1042,108 +1327,134 @@
       `;
     }
 
-    let program, uResLoc, uTimeLoc, uRotLoc, uZoomLoc;
+    let progA, progB;
+    let uLocsA = {}, uLocsB = {};
 
-    function compileEngine(iters, steps, aa, shadows) {
-      if (program) gl.deleteProgram(program);
-
+    function compilePipeline(gl, state) {
       const vs = gl.createShader(gl.VERTEX_SHADER);
       gl.shaderSource(vs, vsSource);
       gl.compileShader(vs);
 
       const fs = gl.createShader(gl.FRAGMENT_SHADER);
-      gl.shaderSource(fs, buildFragmentShader(iters, steps, aa, shadows));
+      gl.shaderSource(fs, buildFragmentShader(state.iters, state.steps, state.aa, state.shadows, state.visualId));
       gl.compileShader(fs);
 
-      program = gl.createProgram();
-      gl.attachShader(program, vs);
-      gl.attachShader(program, fs);
-      gl.linkProgram(program);
-      gl.useProgram(program);
+      const prog = gl.createProgram();
+      gl.attachShader(prog, vs);
+      gl.attachShader(prog, fs);
+      gl.linkProgram(prog);
+      gl.useProgram(prog);
 
-      const aPos = gl.getAttribLocation(program, "a_pos");
+      const aPos = gl.getAttribLocation(prog, "a_pos");
       gl.enableVertexAttribArray(aPos);
       gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
-      uResLoc = gl.getUniformLocation(program, "u_resolution");
-      uTimeLoc = gl.getUniformLocation(program, "u_time");
-      uRotLoc = gl.getUniformLocation(program, "u_rot");
-      uZoomLoc = gl.getUniformLocation(program, "u_zoom");
+      const locs = {
+        uRes: gl.getUniformLocation(prog, "u_resolution"),
+        uTime: gl.getUniformLocation(prog, "u_time"),
+        uRot: gl.getUniformLocation(prog, "u_rot"),
+        uZoom: gl.getUniformLocation(prog, "u_zoom")
+      };
+
+      return { program: prog, locs: locs };
     }
 
-    let rotX = 0, rotY = 0, zoom = 2.4;
-    let isDragging = false, lastX = 0, lastY = 0;
+    // Interactive Drag Controls per Canvas
+    function setupInteractions(canvas, state) {
+      canvas.addEventListener('mousedown', e => { state.isDragging = true; state.lastX = e.clientX; state.lastY = e.clientY; });
+      window.addEventListener('mouseup', () => state.isDragging = false);
+      window.addEventListener('mousemove', e => {
+        if (!state.isDragging) return;
+        state.rotX += (e.clientX - state.lastX) * 0.005;
+        state.rotY = Math.max(-1.4, Math.min(1.4, state.rotY - (e.clientY - state.lastY) * 0.005));
+        state.lastX = e.clientX;
+        state.lastY = e.clientY;
+      });
+      canvas.addEventListener('wheel', e => {
+        state.zoom = Math.max(1.2, Math.min(4.5, state.zoom + e.deltaY * 0.002));
+      }, { passive: true });
+    }
+    setupInteractions(canvasA, stateA);
+    setupInteractions(canvasB, stateB);
 
-    canvas.addEventListener('mousedown', e => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
-    window.addEventListener('mouseup', () => isDragging = false);
-    window.addEventListener('mousemove', e => {
-      if (!isDragging) return;
-      rotX += (e.clientX - lastX) * 0.005;
-      rotY = Math.max(-1.4, Math.min(1.4, rotY - (e.clientY - lastY) * 0.005));
-      lastX = e.clientX; lastY = e.clientY;
-    });
-    window.addEventListener('wheel', e => {
-      zoom = Math.max(1.2, Math.min(4.5, zoom + e.deltaY * 0.002));
-    }, { passive: true });
-
-    function resize() {
+    function resizeCanvas(gl, canvas) {
       const dpr = window.devicePixelRatio || 1;
-      const w = Math.floor(window.innerWidth * dpr);
-      const h = Math.floor(window.innerHeight * dpr);
-
+      const w = Math.floor(canvas.clientWidth * dpr);
+      const h = Math.floor(canvas.clientHeight * dpr);
       if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w; canvas.height = h;
+        canvas.width = w;
+        canvas.height = h;
         gl.viewport(0, 0, w, h);
       }
     }
 
-    // Benchmark Execution State & Complete Metrics Capture
+    // Execution Logic
     let isRunning = false;
+    let isBenchmarkMode = true;
     let benchStart = 0;
     let benchDuration = 15000;
-    let frameTimes = [];
-    let fpsHistory = [];
-    let gpuLoadHistory = [];
-    let cpuLoadHistory = [];
-    let ramTransferHistory = [];
     let animId = null;
     let finalReportData = {};
 
-    function executeBenchmark() {
-      compileEngine(currentIters, currentSteps, currentAA, currentShadows);
+    function executeSuite(benchmarkMode = true) {
+      isBenchmarkMode = benchmarkMode;
 
+      // Compile Pipelines
+      const pipeA = compilePipeline(glA, stateA);
+      progA = pipeA.program;
+      uLocsA = pipeA.locs;
+
+      if (isDualMode) {
+        const pipeB = compilePipeline(glB, stateB);
+        progB = pipeB.program;
+        uLocsB = pipeB.locs;
+      }
+
+      // UI Layout Prep
       document.getElementById('launcherOverlay').classList.add('hidden');
-      document.getElementById('runHud').classList.add('visible');
-      document.getElementById('hudPresetTitle').innerText = `${selectedPreset.toUpperCase()} WORKLOAD`;
-      document.getElementById('hudHwTag').innerText = `${selectedGpu.toUpperCase()} / ${selectedCpu.toUpperCase()}`;
-      canvas.style.display = 'block';
+      document.getElementById('viewportContainer').style.display = 'grid';
+      document.getElementById('viewportContainer').classList.toggle('split', isDualMode);
+      document.getElementById('vpBoxB').style.display = isDualMode ? 'block' : 'none';
+      document.getElementById('masterControls').style.display = 'block';
+
+      // HUD Titles
+      document.getElementById('hudTitleA').innerText = `${stateA.visualName.toUpperCase()}`;
+      document.getElementById('hudSpecA').innerText = `${stateA.presetName} (${stateA.iters}i/${stateA.steps}s)`;
+
+      if (isDualMode) {
+        document.getElementById('hudTitleB').innerText = `${stateB.visualName.toUpperCase()}`;
+        document.getElementById('hudSpecB').innerText = `${stateB.presetName} (${stateB.iters}i/${stateB.steps}s)`;
+      }
 
       isRunning = true;
-      frameTimes = [];
-      fpsHistory = [];
-      gpuLoadHistory = [];
-      cpuLoadHistory = [];
-      ramTransferHistory = [];
-
       benchDuration = parseInt(document.getElementById('runDuration').value) * 1000;
       benchStart = performance.now();
 
-      document.getElementById('progressBarContainer').style.display = 'block';
-      lastTime = performance.now();
-      lastFpsUpdate = performance.now();
-      frameCounter = 0;
+      // Reset Telemetry Buffers
+      [stateA, stateB].forEach(s => {
+        s.fpsHistory = [];
+        s.gpuHistory = [];
+        s.cpuHistory = [];
+        s.vramHistory = [];
+        s.rollingBuffer = [];
+        s.lastTime = performance.now();
+        s.lastFpsUpdate = performance.now();
+        s.frameCounter = 0;
+        s.jsTimeAccum = 0;
+      });
 
+      document.getElementById('progressBarContainer').style.display = isBenchmarkMode ? 'block' : 'none';
       animId = requestAnimationFrame(render);
     }
 
-    function abortBenchmark() {
+    function abortExecution() {
       isRunning = false;
       if (animId) cancelAnimationFrame(animId);
 
       document.getElementById('progressBarContainer').style.display = 'none';
-      document.getElementById('runHud').classList.remove('visible');
+      document.getElementById('masterControls').style.display = 'none';
+      document.getElementById('viewportContainer').style.display = 'none';
       document.getElementById('launcherOverlay').classList.remove('hidden');
-      canvas.style.display = 'none';
     }
 
     function completeBenchmark() {
@@ -1151,242 +1462,225 @@
       if (animId) cancelAnimationFrame(animId);
 
       document.getElementById('progressBarContainer').style.display = 'none';
-      document.getElementById('runHud').classList.remove('visible');
-      canvas.style.display = 'none';
+      document.getElementById('masterControls').style.display = 'none';
+      document.getElementById('viewportContainer').style.display = 'none';
 
-      // Sort frametimes to calculate metrics
-      frameTimes.sort((a, b) => a - b);
-      const total = frameTimes.length;
-      const avgFt = frameTimes.reduce((a, b) => a + b, 0) / total;
-      const avgFps = Math.round(1000 / avgFt);
-      const low1Ft = frameTimes[Math.floor(total * 0.99)];
-      const low1Fps = Math.round(1000 / low1Ft);
+      function calcStats(s, gl, canvas) {
+        const sorted = [...s.rollingBuffer].sort((a, b) => a - b);
+        const total = sorted.length || 1;
+        const avgFt = sorted.reduce((a, b) => a + b, 0) / total;
+        const avgFps = Math.round(1000 / avgFt) || 0;
+        const low1Fps = Math.round(1000 / sorted[Math.floor(total * 0.99)]) || 0;
+        const maxFps = s.fpsHistory.length > 0 ? Math.max(...s.fpsHistory) : avgFps;
+        const minFps = s.fpsHistory.length > 0 ? Math.min(...s.fpsHistory) : low1Fps;
+        const maxGpu = s.gpuHistory.length > 0 ? Math.max(...s.gpuHistory) : 100;
+        const maxCpu = s.cpuHistory.length > 0 ? Math.max(...s.cpuHistory) : 0;
+        const maxVram = s.vramHistory.length > 0 ? Math.max(...s.vramHistory) : 0;
 
-      const maxFps = fpsHistory.length > 0 ? Math.max(...fpsHistory) : avgFps;
-      const minFps = fpsHistory.length > 0 ? Math.min(...fpsHistory) : low1Fps;
+        const factor = ((s.iters * s.steps) / 5010) * s.aa * (s.shadows ? 1.5 : 1.0);
+        const score = Math.round(avgFps * 100 * factor);
 
-      const maxGpu = gpuLoadHistory.length > 0 ? Math.max(...gpuLoadHistory) : 100;
-      const minGpu = gpuLoadHistory.length > 0 ? Math.min(...gpuLoadHistory) : 0;
+        return { avgFps, maxFps, minFps, low1Fps, maxGpu, maxCpu, maxVram, score };
+      }
 
-      const maxCpu = cpuLoadHistory.length > 0 ? Math.max(...cpuLoadHistory) : 0;
-      const minCpu = cpuLoadHistory.length > 0 ? Math.min(...cpuLoadHistory) : 0;
+      const resA = calcStats(stateA, glA, canvasA);
+      const resB = isDualMode ? calcStats(stateB, glB, canvasB) : null;
+      const combinedScore = isDualMode ? Math.round((resA.score + resB.score) / 2) : resA.score;
 
-      const maxRam = ramTransferHistory.length > 0 ? Math.max(...ramTransferHistory) : 0;
-      const minRam = ramTransferHistory.length > 0 ? Math.min(...ramTransferHistory) : 0;
-
-      const complexityFactor = ((currentIters * currentSteps) / 5010) * currentAA * (currentShadows ? 1.5 : 1.0);
-      const score = Math.round(avgFps * 100 * complexityFactor);
-
-      // Estimated Thermals based on GPU Saturation
-      const maxTemp = (currentIters >= 25) ? "74°C - 81°C (Heavy Load)" : "62°C - 68°C (Normal Load)";
-      const minTemp = "38°C - 44°C (Baseline)";
-
-      // Cache report data
       finalReportData = {
-        score: score.toLocaleString(),
+        score: combinedScore.toLocaleString(),
         adapter: detectedGpuString,
         cpu: detectedCpuString,
-        preset: selectedPreset,
         duration: `${benchDuration / 1000}s`,
-        avgFps: `${avgFps} FPS`,
-        maxFps: `${maxFps} FPS`,
-        minFps: `${minFps} FPS`,
-        low1Fps: `${low1Fps} FPS`,
-        maxGpu: `${maxGpu}%`,
-        minGpu: `${minGpu}%`,
-        maxCpu: `${maxCpu}%`,
-        minCpu: `${minCpu}%`,
-        maxRam: `${maxRam.toFixed(2)} GB/s`,
-        minRam: `${minRam.toFixed(2)} GB/s`,
-        maxTemp: maxTemp,
-        minTemp: minTemp,
-        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC'
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+        resA,
+        resB,
+        isDual: isDualMode
       };
 
-      // Populate DOM Report Sheet
       document.getElementById('reportTimestamp').innerText = finalReportData.timestamp;
       document.getElementById('evalScore').innerText = finalReportData.score;
-      document.getElementById('evalHwString').innerText = `${detectedGpuString} • ${selectedPreset} Preset`;
+      document.getElementById('evalHwString').innerText = isDualMode 
+        ? `${detectedGpuString} • DUAL VIEWPORT (${stateA.visualName} vs ${stateB.visualName})`
+        : `${detectedGpuString} • ${stateA.visualName} (${stateA.presetName})`;
 
-      document.getElementById('repMaxFps').innerText = finalReportData.maxFps;
-      document.getElementById('repMinFps').innerText = finalReportData.minFps;
-      document.getElementById('repAvgFps').innerText = `${finalReportData.avgFps} (Avg)`;
-      document.getElementById('rep1LowFps').innerText = `${finalReportData.low1Fps} (1% Low)`;
-
-      document.getElementById('repMaxGpu').innerText = finalReportData.maxGpu;
-      document.getElementById('repMinGpu').innerText = finalReportData.minGpu;
-
-      document.getElementById('repMaxCpu').innerText = finalReportData.maxCpu;
-      document.getElementById('repMinCpu').innerText = finalReportData.minCpu;
-
-      document.getElementById('repMaxRam').innerText = finalReportData.maxRam;
-      document.getElementById('repMinRam').innerText = finalReportData.minRam;
-
-      document.getElementById('repMaxTemp').innerText = finalReportData.maxTemp;
-      document.getElementById('repMinTemp').innerText = finalReportData.minTemp;
-
-      // Make report visible
+      // Render Modal Table
+      let tableHtml = `
+        <tr>
+          <td>Topology & Workload</td>
+          <td><strong>${stateA.visualName} (${stateA.presetName})</strong></td>
+          <td>${isDualMode ? `<strong>${stateB.visualName} (${stateB.presetName})</strong>` : 'N/A (Single Mode)'}</td>
+        </tr>
+        <tr>
+          <td>Average Framerate</td>
+          <td><strong>${resA.avgFps} FPS</strong></td>
+          <td>${isDualMode ? `<strong>${resB.avgFps} FPS</strong>` : '--'}</td>
+        </tr>
+        <tr>
+          <td>Framerate Extreme (Max / Min)</td>
+          <td><strong>${resA.maxFps} / ${resA.minFps} FPS</strong></td>
+          <td>${isDualMode ? `<strong>${resB.maxFps} / ${resB.minFps} FPS</strong>` : '--'}</td>
+        </tr>
+        <tr>
+          <td>1% Low Framerate</td>
+          <td><strong>${resA.low1Fps} FPS</strong></td>
+          <td>${isDualMode ? `<strong>${resB.low1Fps} FPS</strong>` : '--'}</td>
+        </tr>
+        <tr>
+          <td>Peak GPU Saturation</td>
+          <td><strong>${resA.maxGpu}%</strong></td>
+          <td>${isDualMode ? `<strong>${resB.maxGpu}%</strong>` : '--'}</td>
+        </tr>
+        <tr>
+          <td>Peak CPU Thread Dispatch</td>
+          <td><strong>${resA.maxCpu}%</strong></td>
+          <td>${isDualMode ? `<strong>${resB.maxCpu}%</strong>` : '--'}</td>
+        </tr>
+        <tr>
+          <td>Peak VRAM Transfer</td>
+          <td><strong>${resA.maxVram.toFixed(2)} GB/s</strong></td>
+          <td>${isDualMode ? `<strong>${resB.maxVram.toFixed(2)} GB/s</strong>` : '--'}</td>
+        </tr>
+      `;
+      document.getElementById('evalReportBody').innerHTML = tableHtml;
       document.getElementById('evalModal').style.display = 'flex';
     }
 
     function dismissEval() {
       document.getElementById('evalModal').style.display = 'none';
-      abortBenchmark();
+      abortExecution();
     }
 
-    // Export PDF Report Function
     function downloadPdfReport() {
-      if (!window.jspdf || !window.jspdf.jsPDF) {
-        alert("PDF generator loading, please try again in a moment.");
-        return;
-      }
-
+      if (!window.jspdf || !window.jspdf.jsPDF) return;
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-      // Clean, Technical Monochrome PDF Layout
       doc.setFillColor(0, 0, 0);
       doc.rect(0, 0, 210, 297, 'F');
 
       doc.setFont('courier', 'bold');
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(16);
+      doc.setFontSize(15);
       doc.text("VOLUMESHADER_BM • DIAGNOSTIC REPORT", 14, 20);
 
       doc.setFontSize(8);
       doc.setTextColor(130, 130, 130);
       doc.text(`TIMESTAMP: ${finalReportData.timestamp}`, 14, 26);
-      doc.text(`SPEC VERSION: 2026.1`, 14, 30);
+      doc.text(`DIAGNOSTIC MODE: ${finalReportData.isDual ? 'DUAL SPLIT-SCREEN' : 'SINGLE VIEWPORT'}`, 14, 30);
 
       doc.setDrawColor(50, 50, 50);
       doc.line(14, 34, 196, 34);
 
-      // Score Section
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(9);
       doc.text("OVERALL BENCHMARK SCORE", 14, 44);
-      doc.setFontSize(28);
-      doc.text(finalReportData.score, 14, 56);
+      doc.setFontSize(26);
+      doc.text(finalReportData.score, 14, 55);
 
       doc.setFontSize(8);
       doc.setTextColor(180, 180, 180);
-      doc.text(`WORKLOAD: ${finalReportData.preset} (${finalReportData.duration} Run)`, 14, 62);
-      doc.text(`GPU: ${finalReportData.adapter}`, 14, 66);
-      doc.text(`CPU: ${finalReportData.cpu}`, 14, 70);
+      doc.text(`GPU: ${finalReportData.adapter}`, 14, 62);
+      doc.text(`CPU: ${finalReportData.cpu}`, 14, 66);
 
       doc.setDrawColor(50, 50, 50);
-      doc.line(14, 76, 196, 76);
+      doc.line(14, 72, 196, 72);
 
-      // Data Metrics Table
-      doc.setFontSize(9);
-      doc.setTextColor(255, 255, 255);
-      doc.text("TELEMETRY METRICS SUMMARY", 14, 86);
-
+      const d = finalReportData;
       const rows = [
-        ["Framerate Average", finalReportData.avgFps, "1% Low: " + finalReportData.low1Fps],
-        ["Framerate Extreme", "Max: " + finalReportData.maxFps, "Min: " + finalReportData.minFps],
-        ["GPU Core Saturation", "Max: " + finalReportData.maxGpu, "Min: " + finalReportData.minGpu],
-        ["CPU Thread Dispatch", "Max: " + finalReportData.maxCpu, "Min: " + finalReportData.minCpu],
-        ["VRAM Transfer Rate", "Peak: " + finalReportData.maxRam, "Min: " + finalReportData.minRam],
-        ["Thermals (Estimated)", "Load: " + finalReportData.maxTemp, "Idle: " + finalReportData.minTemp]
+        ["Configuration", `${stateA.visualName} (${stateA.presetName})`, d.isDual ? `${stateB.visualName} (${stateB.presetName})` : "N/A"],
+        ["Average FPS", `${d.resA.avgFps} FPS`, d.isDual ? `${d.resB.avgFps} FPS` : "N/A"],
+        ["1% Low FPS", `${d.resA.low1Fps} FPS`, d.isDual ? `${d.resB.low1Fps} FPS` : "N/A"],
+        ["Peak GPU Load", `${d.resA.maxGpu}%`, d.isDual ? `${d.resB.maxGpu}%` : "N/A"],
+        ["Peak CPU Thread", `${d.resA.maxCpu}%`, d.isDual ? `${d.resB.maxCpu}%` : "N/A"],
+        ["Peak VRAM Transfer", `${d.resA.maxVram.toFixed(2)} GB/s`, d.isDual ? `${d.resB.maxVram.toFixed(2)} GB/s` : "N/A"]
       ];
 
-      let y = 96;
-      doc.setFontSize(8);
-      rows.forEach(([label, maxVal, minVal]) => {
+      let y = 84;
+      rows.forEach(([lbl, v1, v2]) => {
         doc.setFillColor(15, 15, 15);
         doc.rect(14, y - 4, 182, 9, 'F');
         doc.setTextColor(200, 200, 200);
-        doc.text(label, 18, y + 2);
+        doc.text(lbl, 18, y + 2);
         doc.setTextColor(255, 255, 255);
-        doc.text(maxVal, 100, y + 2);
-        doc.setTextColor(140, 140, 140);
-        doc.text(minVal, 150, y + 2);
+        doc.text(v1, 80, y + 2);
+        doc.setTextColor(150, 150, 150);
+        doc.text(v2, 145, y + 2);
         y += 11;
       });
-
-      doc.setFontSize(7);
-      doc.setTextColor(100, 100, 100);
-      doc.text("Generated client-side via VolumeShader_BM WebGL Profiling Engine.", 14, 280);
 
       doc.save(`VolumeShader_Report_${Date.now()}.pdf`);
     }
 
-    let lastTime = 0;
-    let frameCounter = 0;
-    let lastFpsUpdate = 0;
-    const rollingBuffer = [];
-    let jsTimeAccumulator = 0;
-
+    // Engine Render Loop
     function render(now) {
       if (!isRunning) return;
-      const frameStart = performance.now();
-      resize();
 
-      const delta = now - lastTime;
-      lastTime = now;
-
-      frameCounter++;
-      rollingBuffer.push(delta);
-      if (rollingBuffer.length > 60) rollingBuffer.shift();
-
-      frameTimes.push(delta);
-      const elapsed = now - benchStart;
-      document.getElementById('progressBar').style.width = `${Math.min(100, (elapsed / benchDuration) * 100)}%`;
-
-      if (elapsed >= benchDuration) {
-        completeBenchmark();
-        return;
+      // Handle Progress Bar in Benchmark Mode
+      if (isBenchmarkMode) {
+        const elapsed = now - benchStart;
+        document.getElementById('progressBar').style.width = `${Math.min(100, (elapsed / benchDuration) * 100)}%`;
+        if (elapsed >= benchDuration) {
+          completeBenchmark();
+          return;
+        }
       }
 
-      // Draw Shader
-      gl.uniform2f(uResLoc, canvas.width, canvas.height);
-      gl.uniform1f(uTimeLoc, now * 0.001);
-      gl.uniform2f(uRotLoc, rotX, rotY);
-      gl.uniform1f(uZoomLoc, zoom);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      function updateAndDraw(gl, canvas, state, uLocs, suffix) {
+        const fStart = performance.now();
+        resizeCanvas(gl, canvas);
 
-      const frameEnd = performance.now();
-      jsTimeAccumulator += (frameEnd - frameStart);
+        const delta = now - state.lastTime;
+        state.lastTime = now;
+        state.frameCounter++;
+        state.rollingBuffer.push(delta);
+        if (state.rollingBuffer.length > 60) state.rollingBuffer.shift();
 
-      // Update Telemetry Every 250ms
-      if (now - lastFpsUpdate >= 250) {
-        const interval = now - lastFpsUpdate;
-        const curFps = Math.round((frameCounter * 1000) / interval);
-        fpsHistory.push(curFps);
+        gl.uniform2f(uLocs.uRes, canvas.width, canvas.height);
+        gl.uniform1f(uLocs.uTime, now * 0.001);
+        gl.uniform2f(uLocs.uRot, state.rotX, state.rotY);
+        gl.uniform1f(uLocs.uZoom, state.zoom);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-        const gpuLoadEstimate = Math.min(100, Math.round((delta / 16.66) * 100));
-        gpuLoadHistory.push(gpuLoadEstimate);
+        const fEnd = performance.now();
+        state.jsTimeAccum += (fEnd - fStart);
 
-        const cpuThreadLoad = Math.min(100, Math.round((jsTimeAccumulator / interval) * 100));
-        cpuLoadHistory.push(cpuThreadLoad);
+        if (now - state.lastFpsUpdate >= 250) {
+          const interval = now - state.lastFpsUpdate;
+          const curFps = Math.round((state.frameCounter * 1000) / interval);
+          state.fpsHistory.push(curFps);
 
-        const totalPixels = canvas.width * canvas.height;
-        const bytesPerRayStep = 16;
-        const bytesThisFrame = totalPixels * currentAA * (currentSteps * 0.35) * bytesPerRayStep;
-        const bandwidthGBs = (bytesThisFrame / (delta / 1000)) / 1073741824;
-        ramTransferHistory.push(bandwidthGBs);
+          const gpuEstimate = Math.min(100, Math.round((delta / 16.66) * 100));
+          state.gpuHistory.push(gpuEstimate);
 
-        // Update DOM Elements
-        document.getElementById('fpsReadout').innerText = curFps;
-        document.getElementById('ftReadout').innerText = `${delta.toFixed(1)} ms`;
-        document.getElementById('gpuUsageReadout').innerText = `${gpuLoadEstimate}%`;
-        document.getElementById('cpuUsageReadout').innerText = `${Math.max(1, cpuThreadLoad)}%`;
-        document.getElementById('ramTransferReadout').innerText = `${bandwidthGBs.toFixed(2)} GB/s`;
+          const cpuLoad = Math.min(100, Math.round((state.jsTimeAccum / interval) * 100));
+          state.cpuHistory.push(cpuLoad);
 
-        if (rollingBuffer.length >= 20) {
-          const sorted = [...rollingBuffer].sort((a, b) => a - b);
-          const low1 = Math.round(1000 / sorted[Math.floor(sorted.length * 0.95)]);
-          document.getElementById('low1Readout').innerText = `${low1} FPS`;
+          const bytesPerFrame = (canvas.width * canvas.height) * state.aa * (state.steps * 0.35) * 16;
+          const vramGBs = (bytesPerFrame / (delta / 1000)) / 1073741824;
+          state.vramHistory.push(vramGBs);
 
-          const median = sorted[Math.floor(sorted.length * 0.5)];
-          const inRange = sorted.filter(f => Math.abs(f - median) < (median * 0.15)).length;
-          document.getElementById('stabilityReadout').innerText = `${Math.round((inRange / sorted.length) * 100)}%`;
+          document.getElementById(`fpsReadout${suffix}`).innerText = curFps;
+          document.getElementById(`ftReadout${suffix}`).innerText = `${delta.toFixed(1)} ms`;
+          document.getElementById(`gpuReadout${suffix}`).innerText = `${gpuEstimate}%`;
+          document.getElementById(`cpuReadout${suffix}`).innerText = `${Math.max(1, cpuLoad)}%`;
+          document.getElementById(`vramReadout${suffix}`).innerText = `${vramGBs.toFixed(2)} GB/s`;
+
+          if (state.rollingBuffer.length >= 20) {
+            const sorted = [...state.rollingBuffer].sort((a, b) => a - b);
+            const low1 = Math.round(1000 / sorted[Math.floor(sorted.length * 0.95)]);
+            document.getElementById(`lowReadout${suffix}`).innerText = `${low1} FPS`;
+          }
+
+          state.frameCounter = 0;
+          state.jsTimeAccum = 0;
+          state.lastFpsUpdate = now;
         }
+      }
 
-        frameCounter = 0;
-        jsTimeAccumulator = 0;
-        lastFpsUpdate = now;
+      updateAndDraw(glA, canvasA, stateA, uLocsA, 'A');
+      if (isDualMode) {
+        updateAndDraw(glB, canvasB, stateB, uLocsB, 'B');
       }
 
       animId = requestAnimationFrame(render);
