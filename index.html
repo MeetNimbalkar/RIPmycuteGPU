@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>VOLUMESHADER BM • Split-Screen Multi-Topology Benchmark</title>
+  <title>VOLUMESHADER BM • Quad 2x2 Multi-Pipeline Diagnostic Suite</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -18,7 +18,6 @@
       --border-focus: #ffffff;
       --text: #ededed;
       --text-dim: #707070;
-      --accent: #ffffff;
     }
 
     * {
@@ -39,7 +38,7 @@
       -webkit-user-select: none;
     }
 
-    /* Split Screen Canvas Container */
+    /* Master Dynamic Grid Viewport Container */
     .viewport-container {
       position: fixed;
       top: 0;
@@ -48,11 +47,19 @@
       height: 100vh;
       z-index: 1;
       display: none;
-      grid-template-columns: 1fr;
       background: #000;
     }
-    .viewport-container.split {
+    .viewport-container.mode-single {
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr;
+    }
+    .viewport-container.mode-dual {
       grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr;
+    }
+    .viewport-container.mode-quad {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
     }
 
     .viewport-box {
@@ -60,10 +67,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      border-right: 1px solid var(--border);
-    }
-    .viewport-box:last-child {
-      border-right: none;
+      border: 1px solid var(--border);
     }
 
     canvas {
@@ -102,7 +106,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 16px;
       background: #000000;
     }
     .launcher-overlay.hidden {
@@ -112,12 +116,12 @@
     .launcher-panel {
       background: var(--surface);
       border: 1px solid var(--border);
-      max-width: 960px;
+      max-width: 1080px;
       width: 100%;
       padding: 24px 28px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
       max-height: 96vh;
       overflow-y: auto;
     }
@@ -132,16 +136,16 @@
       padding-bottom: 12px;
     }
     .title-area h1 {
-      font-size: 1.05rem;
+      font-size: 1rem;
       font-weight: 800;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       font-family: 'JetBrains Mono', monospace;
     }
     .title-area p {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       color: var(--text-dim);
-      margin-top: 3px;
+      margin-top: 2px;
       font-family: 'JetBrains Mono', monospace;
     }
     .spec-badge {
@@ -157,7 +161,7 @@
     .hw-detect-banner {
       background: #000;
       border: 1px solid var(--border);
-      padding: 10px 14px;
+      padding: 8px 12px;
       display: grid;
       grid-template-columns: 1.2fr 1fr;
       gap: 12px;
@@ -165,19 +169,19 @@
     .hw-detect-row {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 1px;
       overflow: hidden;
     }
     .hw-detect-label { 
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.6rem;
+      font-size: 0.58rem;
       color: var(--text-dim); 
       text-transform: uppercase;
       letter-spacing: 0.08em;
     }
     .hw-detect-val { 
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       font-weight: 700;
       color: #ffffff; 
       white-space: nowrap;
@@ -186,37 +190,36 @@
     }
 
     .field-label {
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       font-family: 'JetBrains Mono', monospace;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: var(--text-dim);
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
-    /* Screen Mode Switcher */
+    /* Screen Mode Grid */
     .mode-switch-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
     }
     .mode-btn {
       background: #000;
       border: 1px solid var(--border);
       color: var(--text-dim);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 700;
-      padding: 10px;
+      padding: 8px;
       text-transform: uppercase;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
       transition: all 0.15s ease;
     }
     .mode-btn.active {
@@ -225,31 +228,34 @@
       color: #fff;
     }
 
-    /* Viewport Configurator Dual-Column Grid */
+    /* Viewport Configurator Multi-Card Grid */
     .viewport-config-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 14px;
+      gap: 10px;
     }
-    .viewport-config-grid.dual {
+    .viewport-config-grid.layout-dual {
+      grid-template-columns: 1fr 1fr;
+    }
+    .viewport-config-grid.layout-quad {
       grid-template-columns: 1fr 1fr;
     }
 
     .config-card {
       background: #000000;
       border: 1px solid var(--border);
-      padding: 14px;
+      padding: 10px 12px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
     .config-card-header {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       font-weight: 700;
       color: #fff;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 6px;
+      padding-bottom: 4px;
       text-transform: uppercase;
     }
 
@@ -257,12 +263,12 @@
     .visual-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 4px;
+      gap: 3px;
     }
     .visual-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      padding: 8px 4px;
+      padding: 6px 2px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
@@ -270,21 +276,19 @@
       text-align: center;
       transition: border-color 0.15s ease;
     }
-    .visual-card:hover {
-      border-color: #444;
-    }
+    .visual-card:hover { border-color: #444; }
     .visual-card.active {
       border-color: var(--border-focus);
       background: #111111;
     }
     .visual-title {
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       font-weight: 700;
       color: var(--text);
     }
     .visual-sub {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.55rem;
+      font-size: 0.52rem;
       color: var(--text-dim);
     }
     .visual-card.active .visual-sub { color: #fff; }
@@ -293,46 +297,42 @@
     .presets-matrix {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 4px;
+      gap: 3px;
     }
     .preset-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      padding: 8px;
+      padding: 6px 8px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 1px;
       transition: border-color 0.15s ease;
     }
-    .preset-card:hover {
-      border-color: #444;
-    }
+    .preset-card:hover { border-color: #444; }
     .preset-card.active {
       border-color: var(--border-focus);
       background: #111111;
     }
     .preset-name {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       font-weight: 600;
       color: var(--text);
     }
     .preset-detail {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.58rem;
+      font-size: 0.55rem;
       color: var(--text-dim);
     }
-    .preset-card.active .preset-detail {
-      color: var(--text);
-    }
+    .preset-card.active .preset-detail { color: var(--text); }
 
     /* Action Row */
     .control-row {
       display: grid;
-      grid-template-columns: 140px 1fr 1fr;
+      grid-template-columns: 130px 1fr 1fr;
       gap: 10px;
       border-top: 1px solid var(--border);
-      padding-top: 14px;
+      padding-top: 12px;
     }
     .select-box {
       background: #000000;
@@ -341,7 +341,7 @@
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.72rem;
       padding: 0 8px;
-      height: 42px;
+      height: 38px;
       outline: none;
       cursor: pointer;
     }
@@ -350,7 +350,7 @@
       color: #000000;
       border: 1px solid #ffffff;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.06em;
@@ -366,7 +366,7 @@
       color: #ffffff;
       border: 1px solid var(--border);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.06em;
@@ -381,24 +381,24 @@
     /* Independent In-Run HUD (Per Viewport) */
     .run-hud {
       position: absolute;
-      top: 20px;
-      left: 20px;
+      top: 12px;
+      left: 12px;
       z-index: 10;
       background: rgba(0, 0, 0, 0.94);
       border: 1px solid var(--border);
-      padding: 14px 18px;
-      width: 320px;
+      padding: 10px 14px;
+      width: 250px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
     .hud-title {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.68rem;
+      font-size: 0.62rem;
       color: var(--text-dim);
       text-transform: uppercase;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 6px;
+      padding-bottom: 4px;
       display: flex;
       justify-content: space-between;
     }
@@ -409,36 +409,36 @@
     }
     .hud-fps {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 2.5rem;
+      font-size: 2rem;
       font-weight: 800;
       line-height: 1;
     }
     .hud-fps-unit {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: var(--text-dim);
-      margin-left: 4px;
+      margin-left: 2px;
     }
 
     .hud-telemetry-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 6px 10px;
+      gap: 4px 8px;
       border-top: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
-      padding: 8px 0;
+      padding: 6px 0;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.68rem;
+      font-size: 0.62rem;
     }
-    .hud-tel-item { display: flex; flex-direction: column; gap: 2px; }
-    .hud-tel-lbl { color: var(--text-dim); font-size: 0.58rem; text-transform: uppercase; }
-    .hud-tel-val { color: var(--text); font-weight: 700; font-size: 0.78rem; }
+    .hud-tel-item { display: flex; flex-direction: column; gap: 1px; }
+    .hud-tel-lbl { color: var(--text-dim); font-size: 0.52rem; text-transform: uppercase; }
+    .hud-tel-val { color: var(--text); font-weight: 700; font-size: 0.7rem; }
 
-    /* Master Exit Control (HUD Overlay) */
+    /* Master Overlay Button */
     .master-controls {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: 16px;
+      right: 16px;
       z-index: 50;
       display: none;
     }
@@ -447,15 +447,13 @@
       border: 1px solid var(--border);
       color: var(--text);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 700;
-      padding: 10px 16px;
+      padding: 8px 14px;
       cursor: pointer;
       text-transform: uppercase;
     }
-    .btn-abort-master:hover {
-      border-color: #fff;
-    }
+    .btn-abort-master:hover { border-color: #fff; }
 
     /* Modal Evaluation Sheet */
     .modal-sheet {
@@ -474,12 +472,12 @@
     .modal-box {
       background: #000000;
       border: 1px solid var(--border-focus);
-      max-width: 640px;
+      max-width: 760px;
       width: 100%;
-      padding: 28px 32px;
+      padding: 24px 28px;
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 16px;
       max-height: 94vh;
       overflow-y: auto;
     }
@@ -488,26 +486,26 @@
 
     .modal-header {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       color: var(--text-dim);
       text-transform: uppercase;
       letter-spacing: 0.08em;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 12px;
+      padding-bottom: 10px;
       display: flex;
       justify-content: space-between;
     }
     .score-output {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 3.4rem;
+      font-size: 3.2rem;
       font-weight: 800;
       line-height: 1;
       text-align: center;
-      margin: 4px 0 6px 0;
+      margin: 2px 0 4px 0;
     }
     .eval-subtitle {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       color: var(--text-dim);
       text-align: center;
       text-transform: uppercase;
@@ -518,11 +516,11 @@
       border-collapse: collapse;
       border: 1px solid var(--border);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
+      font-size: 0.68rem;
     }
     .report-table th, .report-table td {
       border: 1px solid var(--border);
-      padding: 8px 12px;
+      padding: 6px 8px;
       text-align: left;
     }
     .report-table th {
@@ -530,26 +528,25 @@
       color: var(--text-dim);
       font-weight: 500;
       text-transform: uppercase;
-      font-size: 0.65rem;
+      font-size: 0.6rem;
     }
-    .report-table td:nth-child(2), .report-table td:nth-child(3) { text-align: right; }
     .report-table td strong { color: #fff; }
 
     .btn-action-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      margin-top: 6px;
+      margin-top: 4px;
     }
     .btn-pdf {
       background: #ffffff;
       color: #000000;
       border: 1px solid #ffffff;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 700;
       text-transform: uppercase;
-      padding: 12px;
+      padding: 10px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -562,10 +559,10 @@
       color: var(--text);
       border: 1px solid var(--border);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 700;
       text-transform: uppercase;
-      padding: 12px;
+      padding: 10px;
       cursor: pointer;
     }
     .btn-dismiss:hover { border-color: #888; }
@@ -577,88 +574,164 @@
     <div class="progress-bar-fill" id="progressBar"></div>
   </div>
 
-  <!-- Master Split Screen Viewport Container -->
-  <div class="viewport-container" id="viewportContainer">
-    <!-- Viewport A (Left / Primary) -->
-    <div class="viewport-box" id="vpBoxA">
-      <canvas id="glcanvasA"></canvas>
-      <div class="run-hud" id="hudA">
+  <!-- Master Split Screen Viewport Container (Single / Dual / Quad) -->
+  <div class="viewport-container mode-single" id="viewportContainer">
+    <!-- Viewport 1 (Top-Left) -->
+    <div class="viewport-box" id="vpBox1">
+      <canvas id="glcanvas1"></canvas>
+      <div class="run-hud" id="hud1">
         <div class="hud-title">
-          <span id="hudTitleA">VIEWPORT 1</span>
-          <span id="hudSpecA">5i / 1002s</span>
+          <span id="hudTitle1">VP1: MANDEL</span>
+          <span id="hudSpec1">5i / 1002s</span>
         </div>
         <div class="hud-readout">
           <div>
-            <span class="hud-fps" id="fpsReadoutA">0</span>
+            <span class="hud-fps" id="fpsReadout1">0</span>
             <span class="hud-fps-unit">FPS</span>
           </div>
-          <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim);" id="ftReadoutA">
+          <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim);" id="ftReadout1">
             0.0 ms
           </div>
         </div>
         <div class="hud-telemetry-grid">
           <div class="hud-tel-item">
             <span class="hud-tel-lbl">GPU Load</span>
-            <span class="hud-tel-val" id="gpuReadoutA">0%</span>
+            <span class="hud-tel-val" id="gpuReadout1">0%</span>
           </div>
           <div class="hud-tel-item">
             <span class="hud-tel-lbl">CPU Dispatch</span>
-            <span class="hud-tel-val" id="cpuReadoutA">0%</span>
+            <span class="hud-tel-val" id="cpuReadout1">0%</span>
           </div>
           <div class="hud-tel-item">
             <span class="hud-tel-lbl">VRAM Transfer</span>
-            <span class="hud-tel-val" id="vramReadoutA">0.00 GB/s</span>
+            <span class="hud-tel-val" id="vramReadout1">0.00 GB/s</span>
           </div>
           <div class="hud-tel-item">
             <span class="hud-tel-lbl">1% Low</span>
-            <span class="hud-tel-val" id="lowReadoutA">-- FPS</span>
+            <span class="hud-tel-val" id="lowReadout1">-- FPS</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Viewport B (Right / Secondary - Active in Split Screen) -->
-    <div class="viewport-box" id="vpBoxB" style="display: none;">
-      <canvas id="glcanvasB"></canvas>
-      <div class="run-hud" id="hudB">
+    <!-- Viewport 2 (Top-Right) -->
+    <div class="viewport-box" id="vpBox2" style="display: none;">
+      <canvas id="glcanvas2"></canvas>
+      <div class="run-hud" id="hud2">
         <div class="hud-title">
-          <span id="hudTitleB">VIEWPORT 2</span>
-          <span id="hudSpecB">5i / 1002s</span>
+          <span id="hudTitle2">VP2: MENGER</span>
+          <span id="hudSpec2">5i / 1002s</span>
         </div>
         <div class="hud-readout">
           <div>
-            <span class="hud-fps" id="fpsReadoutB">0</span>
+            <span class="hud-fps" id="fpsReadout2">0</span>
             <span class="hud-fps-unit">FPS</span>
           </div>
-          <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim);" id="ftReadoutB">
+          <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim);" id="ftReadout2">
             0.0 ms
           </div>
         </div>
         <div class="hud-telemetry-grid">
           <div class="hud-tel-item">
             <span class="hud-tel-lbl">GPU Load</span>
-            <span class="hud-tel-val" id="gpuReadoutB">0%</span>
+            <span class="hud-tel-val" id="gpuReadout2">0%</span>
           </div>
           <div class="hud-tel-item">
             <span class="hud-tel-lbl">CPU Dispatch</span>
-            <span class="hud-tel-val" id="cpuReadoutB">0%</span>
+            <span class="hud-tel-val" id="cpuReadout2">0%</span>
           </div>
           <div class="hud-tel-item">
             <span class="hud-tel-lbl">VRAM Transfer</span>
-            <span class="hud-tel-val" id="vramReadoutB">0.00 GB/s</span>
+            <span class="hud-tel-val" id="vramReadout2">0.00 GB/s</span>
           </div>
           <div class="hud-tel-item">
             <span class="hud-tel-lbl">1% Low</span>
-            <span class="hud-tel-val" id="lowReadoutB">-- FPS</span>
+            <span class="hud-tel-val" id="lowReadout2">-- FPS</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Viewport 3 (Bottom-Left) -->
+    <div class="viewport-box" id="vpBox3" style="display: none;">
+      <canvas id="glcanvas3"></canvas>
+      <div class="run-hud" id="hud3">
+        <div class="hud-title">
+          <span id="hudTitle3">VP3: KLEIN</span>
+          <span id="hudSpec3">5i / 1002s</span>
+        </div>
+        <div class="hud-readout">
+          <div>
+            <span class="hud-fps" id="fpsReadout3">0</span>
+            <span class="hud-fps-unit">FPS</span>
+          </div>
+          <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim);" id="ftReadout3">
+            0.0 ms
+          </div>
+        </div>
+        <div class="hud-telemetry-grid">
+          <div class="hud-tel-item">
+            <span class="hud-tel-lbl">GPU Load</span>
+            <span class="hud-tel-val" id="gpuReadout3">0%</span>
+          </div>
+          <div class="hud-tel-item">
+            <span class="hud-tel-lbl">CPU Dispatch</span>
+            <span class="hud-tel-val" id="cpuReadout3">0%</span>
+          </div>
+          <div class="hud-tel-item">
+            <span class="hud-tel-lbl">VRAM Transfer</span>
+            <span class="hud-tel-val" id="vramReadout3">0.00 GB/s</span>
+          </div>
+          <div class="hud-tel-item">
+            <span class="hud-tel-lbl">1% Low</span>
+            <span class="hud-tel-val" id="lowReadout3">-- FPS</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Viewport 4 (Bottom-Right) -->
+    <div class="viewport-box" id="vpBox4" style="display: none;">
+      <canvas id="glcanvas4"></canvas>
+      <div class="run-hud" id="hud4">
+        <div class="hud-title">
+          <span id="hudTitle4">VP4: NEBULA</span>
+          <span id="hudSpec4">5i / 1002s</span>
+        </div>
+        <div class="hud-readout">
+          <div>
+            <span class="hud-fps" id="fpsReadout4">0</span>
+            <span class="hud-fps-unit">FPS</span>
+          </div>
+          <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim);" id="ftReadout4">
+            0.0 ms
+          </div>
+        </div>
+        <div class="hud-telemetry-grid">
+          <div class="hud-tel-item">
+            <span class="hud-tel-lbl">GPU Load</span>
+            <span class="hud-tel-val" id="gpuReadout4">0%</span>
+          </div>
+          <div class="hud-tel-item">
+            <span class="hud-tel-lbl">CPU Dispatch</span>
+            <span class="hud-tel-val" id="cpuReadout4">0%</span>
+          </div>
+          <div class="hud-tel-item">
+            <span class="hud-tel-lbl">VRAM Transfer</span>
+            <span class="hud-tel-val" id="vramReadout4">0.00 GB/s</span>
+          </div>
+          <div class="hud-tel-item">
+            <span class="hud-tel-lbl">1% Low</span>
+            <span class="hud-tel-val" id="lowReadout4">-- FPS</span>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Master Floating Overlay Controls -->
+  <!-- Master Exit Button -->
   <div class="master-controls" id="masterControls">
-    <button class="btn-abort-master" id="btnAbortMaster" onclick="abortExecution()">✕ Exit View</button>
+    <button class="btn-abort-master" onclick="abortExecution()">✕ Exit View</button>
   </div>
 
   <!-- High-Efficiency Pre-Flight Launch Dashboard -->
@@ -667,7 +740,7 @@
       <div class="panel-header">
         <div class="title-area">
           <h1>VOLUMESHADER_BM</h1>
-          <p>Split-Screen Dual Pipeline Diagnostic Suite</p>
+          <p>Quad 2x2 Multi-Pipeline Diagnostic Suite</p>
         </div>
         <div class="spec-badge">SPEC 2026.1</div>
       </div>
@@ -684,135 +757,118 @@
         </div>
       </div>
 
-      <!-- Screen Mode Selector -->
+      <!-- Layout Mode Selector -->
       <div>
-        <div class="field-label">Screen Diagnostic Layout</div>
+        <div class="field-label">Diagnostic Screen Mode</div>
         <div class="mode-switch-grid">
-          <button class="mode-btn active" id="modeBtnSingle" onclick="setScreenMode('single')">Single Viewport</button>
-          <button class="mode-btn" id="modeBtnDual" onclick="setScreenMode('dual')">Dual Split-Screen (Side-by-Side)</button>
+          <button class="mode-btn active" id="btnModeSingle" onclick="setLayoutMode('single')">1. Single View</button>
+          <button class="mode-btn" id="btnModeDual" onclick="setLayoutMode('dual')">2. Dual Split (1x2)</button>
+          <button class="mode-btn" id="btnModeQuad" onclick="setLayoutMode('quad')">3. Quad Grid (2x2)</button>
         </div>
       </div>
 
-      <!-- Configurator Grid (Supports Dual Topologies and Presets Side-by-Side) -->
+      <!-- Multi-Card Viewport Configurator -->
       <div class="viewport-config-grid" id="vpConfigGrid">
-        <!-- Configuration Card Primary (Viewport A) -->
-        <div class="config-card" id="cardA">
-          <div class="config-card-header" id="labelCardA">Viewport 1 Configuration</div>
-
+        <!-- Viewport 1 Configuration Card -->
+        <div class="config-card" id="cfgCard1">
+          <div class="config-card-header" id="cfgHeader1">Viewport 1 Configuration</div>
           <div>
-            <div class="field-label">Volumetric Topology</div>
+            <div class="field-label">Topology</div>
             <div class="visual-grid">
-              <div class="visual-card active" onclick="setVpVisual('A', 0, 'Mandelbulb', this)">
-                <div class="visual-title">Mandel</div>
-                <div class="visual-sub">Sphere</div>
-              </div>
-              <div class="visual-card" onclick="setVpVisual('A', 1, 'Menger Cube', this)">
-                <div class="visual-title">Menger</div>
-                <div class="visual-sub">Cube</div>
-              </div>
-              <div class="visual-card" onclick="setVpVisual('A', 2, 'Julia 4D', this)">
-                <div class="visual-title">Julia</div>
-                <div class="visual-sub">4D Slice</div>
-              </div>
-              <div class="visual-card" onclick="setVpVisual('A', 3, 'Kleinian IFS', this)">
-                <div class="visual-title">Klein</div>
-                <div class="visual-sub">Matrix</div>
-              </div>
-              <div class="visual-card" onclick="setVpVisual('A', 4, 'Nebula', this)">
-                <div class="visual-title">Nebula</div>
-                <div class="visual-sub">Smoke</div>
-              </div>
+              <div class="visual-card active" onclick="setVpVisual(0, 0, 'Mandelbulb', this)"><div class="visual-title">Mandel</div><div class="visual-sub">Sphere</div></div>
+              <div class="visual-card" onclick="setVpVisual(0, 1, 'Menger Cube', this)"><div class="visual-title">Menger</div><div class="visual-sub">Cube</div></div>
+              <div class="visual-card" onclick="setVpVisual(0, 2, 'Julia 4D', this)"><div class="visual-title">Julia</div><div class="visual-sub">4D Slice</div></div>
+              <div class="visual-card" onclick="setVpVisual(0, 3, 'Kleinian IFS', this)"><div class="visual-title">Klein</div><div class="visual-sub">Matrix</div></div>
+              <div class="visual-card" onclick="setVpVisual(0, 4, 'Nebula', this)"><div class="visual-title">Nebula</div><div class="visual-sub">Smoke</div></div>
             </div>
           </div>
-
           <div>
-            <div class="field-label">Stress Difficulty Preset</div>
+            <div class="field-label">Stress Preset</div>
             <div class="presets-matrix">
-              <div class="preset-card" onclick="setVpPreset('A', 2, 250, 1, 0, 'Simple', this)">
-                <div class="preset-name">Simple</div>
-                <div class="preset-detail">2i / 250s</div>
-              </div>
-              <div class="preset-card active" onclick="setVpPreset('A', 5, 1002, 1, 0, 'Standard', this)">
-                <div class="preset-name">Standard</div>
-                <div class="preset-detail">5i / 1002s</div>
-              </div>
-              <div class="preset-card" onclick="setVpPreset('A', 7, 1500, 1, 0, 'Advanced', this)">
-                <div class="preset-name">Advanced</div>
-                <div class="preset-detail">7i / 1500s</div>
-              </div>
-              <div class="preset-card" onclick="setVpPreset('A', 9, 2000, 1, 0, 'Extreme', this)">
-                <div class="preset-name">Extreme</div>
-                <div class="preset-detail">9i / 2000s</div>
-              </div>
-              <div class="preset-card" onclick="setVpPreset('A', 25, 3000, 2, 1, 'Ultra Ext.', this)">
-                <div class="preset-name">Ultra Ext.</div>
-                <div class="preset-detail">25i / 2x AA</div>
-              </div>
-              <div class="preset-card" onclick="setVpPreset('A', 45, 4500, 4, 1, 'Ultra Ext.+', this)">
-                <div class="preset-name">Ultra Ext.+</div>
-                <div class="preset-detail">45i / 4x AA</div>
-              </div>
+              <div class="preset-card" onclick="setVpPreset(0, 2, 250, 1, 0, 'Simple', this)"><div class="preset-name">Simple</div><div class="preset-detail">2i / 250s</div></div>
+              <div class="preset-card active" onclick="setVpPreset(0, 5, 1002, 1, 0, 'Standard', this)"><div class="preset-name">Standard</div><div class="preset-detail">5i / 1002s</div></div>
+              <div class="preset-card" onclick="setVpPreset(0, 7, 1500, 1, 0, 'Advanced', this)"><div class="preset-name">Advanced</div><div class="preset-detail">7i / 1500s</div></div>
+              <div class="preset-card" onclick="setVpPreset(0, 9, 2000, 1, 0, 'Extreme', this)"><div class="preset-name">Extreme</div><div class="preset-detail">9i / 2000s</div></div>
+              <div class="preset-card" onclick="setVpPreset(0, 25, 3000, 2, 1, 'Ultra Ext.', this)"><div class="preset-name">Ultra Ext.</div><div class="preset-detail">25i / 2x AA</div></div>
+              <div class="preset-card" onclick="setVpPreset(0, 45, 4500, 4, 1, 'Ultra Ext.+', this)"><div class="preset-name">Ultra Ext.+</div><div class="preset-detail">45i / 4x AA</div></div>
             </div>
           </div>
         </div>
 
-        <!-- Configuration Card Secondary (Viewport B - Active in Dual Mode) -->
-        <div class="config-card" id="cardB" style="display: none;">
+        <!-- Viewport 2 Configuration Card -->
+        <div class="config-card" id="cfgCard2" style="display: none;">
           <div class="config-card-header">Viewport 2 Configuration</div>
-
           <div>
-            <div class="field-label">Volumetric Topology</div>
+            <div class="field-label">Topology</div>
             <div class="visual-grid">
-              <div class="visual-card" onclick="setVpVisual('B', 0, 'Mandelbulb', this)">
-                <div class="visual-title">Mandel</div>
-                <div class="visual-sub">Sphere</div>
-              </div>
-              <div class="visual-card" onclick="setVpVisual('B', 1, 'Menger Cube', this)">
-                <div class="visual-title">Menger</div>
-                <div class="visual-sub">Cube</div>
-              </div>
-              <div class="visual-card" onclick="setVpVisual('B', 2, 'Julia 4D', this)">
-                <div class="visual-title">Julia</div>
-                <div class="visual-sub">4D Slice</div>
-              </div>
-              <div class="visual-card active" onclick="setVpVisual('B', 3, 'Kleinian IFS', this)">
-                <div class="visual-title">Klein</div>
-                <div class="visual-sub">Matrix</div>
-              </div>
-              <div class="visual-card" onclick="setVpVisual('B', 4, 'Nebula', this)">
-                <div class="visual-title">Nebula</div>
-                <div class="visual-sub">Smoke</div>
-              </div>
+              <div class="visual-card" onclick="setVpVisual(1, 0, 'Mandelbulb', this)"><div class="visual-title">Mandel</div><div class="visual-sub">Sphere</div></div>
+              <div class="visual-card active" onclick="setVpVisual(1, 1, 'Menger Cube', this)"><div class="visual-title">Menger</div><div class="visual-sub">Cube</div></div>
+              <div class="visual-card" onclick="setVpVisual(1, 2, 'Julia 4D', this)"><div class="visual-title">Julia</div><div class="visual-sub">4D Slice</div></div>
+              <div class="visual-card" onclick="setVpVisual(1, 3, 'Kleinian IFS', this)"><div class="visual-title">Klein</div><div class="visual-sub">Matrix</div></div>
+              <div class="visual-card" onclick="setVpVisual(1, 4, 'Nebula', this)"><div class="visual-title">Nebula</div><div class="visual-sub">Smoke</div></div>
             </div>
           </div>
-
           <div>
-            <div class="field-label">Stress Difficulty Preset</div>
+            <div class="field-label">Stress Preset</div>
             <div class="presets-matrix">
-              <div class="preset-card" onclick="setVpPreset('B', 2, 250, 1, 0, 'Simple', this)">
-                <div class="preset-name">Simple</div>
-                <div class="preset-detail">2i / 250s</div>
-              </div>
-              <div class="preset-card" onclick="setVpPreset('B', 5, 1002, 1, 0, 'Standard', this)">
-                <div class="preset-name">Standard</div>
-                <div class="preset-detail">5i / 1002s</div>
-              </div>
-              <div class="preset-card" onclick="setVpPreset('B', 7, 1500, 1, 0, 'Advanced', this)">
-                <div class="preset-name">Advanced</div>
-                <div class="preset-detail">7i / 1500s</div>
-              </div>
-              <div class="preset-card" onclick="setVpPreset('B', 9, 2000, 1, 0, 'Extreme', this)">
-                <div class="preset-name">Extreme</div>
-                <div class="preset-detail">9i / 2000s</div>
-              </div>
-              <div class="preset-card active" onclick="setVpPreset('B', 25, 3000, 2, 1, 'Ultra Ext.', this)">
-                <div class="preset-name">Ultra Ext.</div>
-                <div class="preset-detail">25i / 2x AA</div>
-              </div>
-              <div class="preset-card" onclick="setVpPreset('B', 45, 4500, 4, 1, 'Ultra Ext.+', this)">
-                <div class="preset-name">Ultra Ext.+</div>
-                <div class="preset-detail">45i / 4x AA</div>
-              </div>
+              <div class="preset-card" onclick="setVpPreset(1, 2, 250, 1, 0, 'Simple', this)"><div class="preset-name">Simple</div><div class="preset-detail">2i / 250s</div></div>
+              <div class="preset-card active" onclick="setVpPreset(1, 5, 1002, 1, 0, 'Standard', this)"><div class="preset-name">Standard</div><div class="preset-detail">5i / 1002s</div></div>
+              <div class="preset-card" onclick="setVpPreset(1, 7, 1500, 1, 0, 'Advanced', this)"><div class="preset-name">Advanced</div><div class="preset-detail">7i / 1500s</div></div>
+              <div class="preset-card" onclick="setVpPreset(1, 9, 2000, 1, 0, 'Extreme', this)"><div class="preset-name">Extreme</div><div class="preset-detail">9i / 2000s</div></div>
+              <div class="preset-card" onclick="setVpPreset(1, 25, 3000, 2, 1, 'Ultra Ext.', this)"><div class="preset-name">Ultra Ext.</div><div class="preset-detail">25i / 2x AA</div></div>
+              <div class="preset-card" onclick="setVpPreset(1, 45, 4500, 4, 1, 'Ultra Ext.+', this)"><div class="preset-name">Ultra Ext.+</div><div class="preset-detail">45i / 4x AA</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Viewport 3 Configuration Card -->
+        <div class="config-card" id="cfgCard3" style="display: none;">
+          <div class="config-card-header">Viewport 3 Configuration</div>
+          <div>
+            <div class="field-label">Topology</div>
+            <div class="visual-grid">
+              <div class="visual-card" onclick="setVpVisual(2, 0, 'Mandelbulb', this)"><div class="visual-title">Mandel</div><div class="visual-sub">Sphere</div></div>
+              <div class="visual-card" onclick="setVpVisual(2, 1, 'Menger Cube', this)"><div class="visual-title">Menger</div><div class="visual-sub">Cube</div></div>
+              <div class="visual-card" onclick="setVpVisual(2, 2, 'Julia 4D', this)"><div class="visual-title">Julia</div><div class="visual-sub">4D Slice</div></div>
+              <div class="visual-card active" onclick="setVpVisual(2, 3, 'Kleinian IFS', this)"><div class="visual-title">Klein</div><div class="visual-sub">Matrix</div></div>
+              <div class="visual-card" onclick="setVpVisual(2, 4, 'Nebula', this)"><div class="visual-title">Nebula</div><div class="visual-sub">Smoke</div></div>
+            </div>
+          </div>
+          <div>
+            <div class="field-label">Stress Preset</div>
+            <div class="presets-matrix">
+              <div class="preset-card" onclick="setVpPreset(2, 250, 1, 0, 'Simple', this)"><div class="preset-name">Simple</div><div class="preset-detail">2i / 250s</div></div>
+              <div class="preset-card" onclick="setVpPreset(2, 5, 1002, 1, 0, 'Standard', this)"><div class="preset-name">Standard</div><div class="preset-detail">5i / 1002s</div></div>
+              <div class="preset-card" onclick="setVpPreset(2, 7, 1500, 1, 0, 'Advanced', this)"><div class="preset-name">Advanced</div><div class="preset-detail">7i / 1500s</div></div>
+              <div class="preset-card" onclick="setVpPreset(2, 9, 2000, 1, 0, 'Extreme', this)"><div class="preset-name">Extreme</div><div class="preset-detail">9i / 2000s</div></div>
+              <div class="preset-card active" onclick="setVpPreset(2, 25, 3000, 2, 1, 'Ultra Ext.', this)"><div class="preset-name">Ultra Ext.</div><div class="preset-detail">25i / 2x AA</div></div>
+              <div class="preset-card" onclick="setVpPreset(2, 45, 4500, 4, 1, 'Ultra Ext.+', this)"><div class="preset-name">Ultra Ext.+</div><div class="preset-detail">45i / 4x AA</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Viewport 4 Configuration Card -->
+        <div class="config-card" id="cfgCard4" style="display: none;">
+          <div class="config-card-header">Viewport 4 Configuration</div>
+          <div>
+            <div class="field-label">Topology</div>
+            <div class="visual-grid">
+              <div class="visual-card" onclick="setVpVisual(3, 0, 'Mandelbulb', this)"><div class="visual-title">Mandel</div><div class="visual-sub">Sphere</div></div>
+              <div class="visual-card" onclick="setVpVisual(3, 1, 'Menger Cube', this)"><div class="visual-title">Menger</div><div class="visual-sub">Cube</div></div>
+              <div class="visual-card" onclick="setVpVisual(3, 2, 'Julia 4D', this)"><div class="visual-title">Julia</div><div class="visual-sub">4D Slice</div></div>
+              <div class="visual-card" onclick="setVpVisual(3, 3, 'Kleinian IFS', this)"><div class="visual-title">Klein</div><div class="visual-sub">Matrix</div></div>
+              <div class="visual-card active" onclick="setVpVisual(3, 4, 'Nebula', this)"><div class="visual-title">Nebula</div><div class="visual-sub">Smoke</div></div>
+            </div>
+          </div>
+          <div>
+            <div class="field-label">Stress Preset</div>
+            <div class="presets-matrix">
+              <div class="preset-card" onclick="setVpPreset(3, 2, 250, 1, 0, 'Simple', this)"><div class="preset-name">Simple</div><div class="preset-detail">2i / 250s</div></div>
+              <div class="preset-card" onclick="setVpPreset(3, 5, 1002, 1, 0, 'Standard', this)"><div class="preset-name">Standard</div><div class="preset-detail">5i / 1002s</div></div>
+              <div class="preset-card" onclick="setVpPreset(3, 7, 1500, 1, 0, 'Advanced', this)"><div class="preset-name">Advanced</div><div class="preset-detail">7i / 1500s</div></div>
+              <div class="preset-card" onclick="setVpPreset(3, 9, 2000, 1, 0, 'Extreme', this)"><div class="preset-name">Extreme</div><div class="preset-detail">9i / 2000s</div></div>
+              <div class="preset-card" onclick="setVpPreset(3, 25, 3000, 2, 1, 'Ultra Ext.', this)"><div class="preset-name">Ultra Ext.</div><div class="preset-detail">25i / 2x AA</div></div>
+              <div class="preset-card active" onclick="setVpPreset(3, 45, 4500, 4, 1, 'Ultra Ext.+', this)"><div class="preset-name">Ultra Ext.+</div><div class="preset-detail">45i / 4x AA</div></div>
             </div>
           </div>
         </div>
@@ -846,12 +902,8 @@
       </div>
 
       <table class="report-table">
-        <thead>
-          <tr>
-            <th>Telemetry Category</th>
-            <th>Primary Viewport</th>
-            <th>Secondary Viewport</th>
-          </tr>
+        <thead id="evalReportHead">
+          <!-- Dynamically Injected -->
         </thead>
         <tbody id="evalReportBody">
           <!-- Dynamically Injected -->
@@ -866,74 +918,32 @@
   </div>
 
   <script>
-    // System & Hardware State
     let detectedGpuString = "Generic WebGL GPU";
     let detectedCpuString = "x86 Platform";
-    let isDualMode = false;
+    let currentLayout = 'single'; // 'single' | 'dual' | 'quad'
 
-    // Viewport A State
-    const stateA = {
-      visualId: 0,
-      visualName: 'Mandelbulb',
-      presetName: 'Standard',
-      iters: 5,
-      steps: 1002,
-      aa: 1,
-      shadows: 0,
-      rotX: 0,
-      rotY: 0,
-      zoom: 2.4,
-      isDragging: false,
-      lastX: 0,
-      lastY: 0,
-      fpsHistory: [],
-      gpuHistory: [],
-      cpuHistory: [],
-      vramHistory: [],
-      rollingBuffer: [],
-      lastTime: 0,
-      lastFpsUpdate: 0,
-      frameCounter: 0,
-      jsTimeAccum: 0
-    };
+    // Array of 4 Pipeline States
+    const vpStates = [
+      { id: 0, visualId: 0, visualName: 'Mandelbulb', presetName: 'Standard', iters: 5, steps: 1002, aa: 1, shadows: 0, rotX: 0, rotY: 0, zoom: 2.4, isDragging: false, lastX: 0, lastY: 0, fpsHistory: [], gpuHistory: [], cpuHistory: [], vramHistory: [], rollingBuffer: [], lastTime: 0, lastFpsUpdate: 0, frameCounter: 0, jsTimeAccum: 0 },
+      { id: 1, visualId: 1, visualName: 'Menger Cube', presetName: 'Standard', iters: 5, steps: 1002, aa: 1, shadows: 0, rotX: 0, rotY: 0, zoom: 2.4, isDragging: false, lastX: 0, lastY: 0, fpsHistory: [], gpuHistory: [], cpuHistory: [], vramHistory: [], rollingBuffer: [], lastTime: 0, lastFpsUpdate: 0, frameCounter: 0, jsTimeAccum: 0 },
+      { id: 2, visualId: 3, visualName: 'Kleinian IFS', presetName: 'Ultra Ext.', iters: 25, steps: 3000, aa: 2, shadows: 1, rotX: 0, rotY: 0, zoom: 2.4, isDragging: false, lastX: 0, lastY: 0, fpsHistory: [], gpuHistory: [], cpuHistory: [], vramHistory: [], rollingBuffer: [], lastTime: 0, lastFpsUpdate: 0, frameCounter: 0, jsTimeAccum: 0 },
+      { id: 3, visualId: 4, visualName: 'Nebula', presetName: 'Ultra Ext.+', iters: 45, steps: 4500, aa: 4, shadows: 1, rotX: 0, rotY: 0, zoom: 2.4, isDragging: false, lastX: 0, lastY: 0, fpsHistory: [], gpuHistory: [], cpuHistory: [], vramHistory: [], rollingBuffer: [], lastTime: 0, lastFpsUpdate: 0, frameCounter: 0, jsTimeAccum: 0 }
+    ];
 
-    // Viewport B State (Secondary Pipeline)
-    const stateB = {
-      visualId: 3,
-      visualName: 'Kleinian IFS',
-      presetName: 'Ultra Ext.',
-      iters: 25,
-      steps: 3000,
-      aa: 2,
-      shadows: 1,
-      rotX: 0,
-      rotY: 0,
-      zoom: 2.4,
-      isDragging: false,
-      lastX: 0,
-      lastY: 0,
-      fpsHistory: [],
-      gpuHistory: [],
-      cpuHistory: [],
-      vramHistory: [],
-      rollingBuffer: [],
-      lastTime: 0,
-      lastFpsUpdate: 0,
-      frameCounter: 0,
-      jsTimeAccum: 0
-    };
+    // Initialize Canvas Contexts
+    const canvases = [
+      document.getElementById('glcanvas1'),
+      document.getElementById('glcanvas2'),
+      document.getElementById('glcanvas3'),
+      document.getElementById('glcanvas4')
+    ];
 
-    // WebGL Canvas Contexts
-    const canvasA = document.getElementById('glcanvasA');
-    const glA = canvasA.getContext('webgl', { powerPreference: "high-performance", antialias: false });
-
-    const canvasB = document.getElementById('glcanvasB');
-    const glB = canvasB.getContext('webgl', { powerPreference: "high-performance", antialias: false });
+    const glContexts = canvases.map(c => c.getContext('webgl', { powerPreference: "high-performance", antialias: false }));
 
     async function autoDetectHardware() {
-      const dbg = glA.getExtension('WEBGL_debug_renderer_info');
+      const dbg = glContexts[0].getExtension('WEBGL_debug_renderer_info');
       if (dbg) {
-        const raw = glA.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
+        const raw = glContexts[0].getParameter(dbg.UNMASKED_RENDERER_WEBGL);
         if (raw && raw.length > 2) {
           detectedGpuString = raw
             .replace(/Direct3D.*|OpenGL.*|\(R\)|\(TM\)/g, '')
@@ -956,51 +966,53 @@
       document.getElementById('detectedCpuArch').innerText = detectedCpuString;
     }
 
-    function setScreenMode(mode) {
-      isDualMode = (mode === 'dual');
-      document.getElementById('modeBtnSingle').classList.toggle('active', !isDualMode);
-      document.getElementById('modeBtnDual').classList.toggle('active', isDualMode);
+    function setLayoutMode(mode) {
+      currentLayout = mode;
+      document.getElementById('btnModeSingle').classList.toggle('active', mode === 'single');
+      document.getElementById('btnModeDual').classList.toggle('active', mode === 'dual');
+      document.getElementById('btnModeQuad').classList.toggle('active', mode === 'quad');
 
-      document.getElementById('vpConfigGrid').classList.toggle('dual', isDualMode);
-      document.getElementById('cardB').style.display = isDualMode ? 'flex' : 'none';
-      document.getElementById('labelCardA').innerText = isDualMode ? 'Viewport 1 (Left)' : 'Viewport 1 Configuration';
+      const grid = document.getElementById('vpConfigGrid');
+      grid.className = 'viewport-config-grid';
+      if (mode === 'dual') grid.classList.add('layout-dual');
+      if (mode === 'quad') grid.classList.add('layout-quad');
+
+      document.getElementById('cfgCard2').style.display = (mode === 'dual' || mode === 'quad') ? 'flex' : 'none';
+      document.getElementById('cfgCard3').style.display = (mode === 'quad') ? 'flex' : 'none';
+      document.getElementById('cfgCard4').style.display = (mode === 'quad') ? 'flex' : 'none';
+
+      document.getElementById('cfgHeader1').innerText = (mode === 'single') ? 'Viewport 1 Configuration' : 'Viewport 1 (Top-Left)';
     }
 
-    function setVpVisual(vp, id, name, element) {
-      const targetState = (vp === 'A') ? stateA : stateB;
-      targetState.visualId = id;
-      targetState.visualName = name;
-
+    function setVpVisual(vpIndex, id, name, element) {
+      vpStates[vpIndex].visualId = id;
+      vpStates[vpIndex].visualName = name;
       element.parentElement.querySelectorAll('.visual-card').forEach(c => c.classList.remove('active'));
       element.classList.add('active');
     }
 
-    function setVpPreset(vp, iters, steps, aa, shadows, name, element) {
-      const targetState = (vp === 'A') ? stateA : stateB;
-      targetState.iters = iters;
-      targetState.steps = steps;
-      targetState.aa = aa;
-      targetState.shadows = shadows;
-      targetState.presetName = name;
-
+    function setVpPreset(vpIndex, iters, steps, aa, shadows, name, element) {
+      vpStates[vpIndex].iters = iters;
+      vpStates[vpIndex].steps = steps;
+      vpStates[vpIndex].aa = aa;
+      vpStates[vpIndex].shadows = shadows;
+      vpStates[vpIndex].presetName = name;
       element.parentElement.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
       element.classList.add('active');
     }
 
-    // Quad Vertex Geometry
+    // Geometry Quad
     const quadVertices = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
     const vsSource = `
       attribute vec2 a_pos;
       void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
     `;
 
-    function initGLContext(gl) {
+    glContexts.forEach(gl => {
       const buf = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, buf);
       gl.bufferData(gl.ARRAY_BUFFER, quadVertices, gl.STATIC_DRAW);
-    }
-    initGLContext(glA);
-    initGLContext(glB);
+    });
 
     function buildFragmentShader(iterations, maxSteps, aaSamples, useShadows, visualId) {
       return `
@@ -1327,10 +1339,13 @@
       `;
     }
 
-    let progA, progB;
-    let uLocsA = {}, uLocsB = {};
+    const compiledPrograms = [null, null, null, null];
+    const uniformLocations = [null, null, null, null];
 
-    function compilePipeline(gl, state) {
+    function compilePipeline(index) {
+      const gl = glContexts[index];
+      const state = vpStates[index];
+
       const vs = gl.createShader(gl.VERTEX_SHADER);
       gl.shaderSource(vs, vsSource);
       gl.compileShader(vs);
@@ -1349,18 +1364,18 @@
       gl.enableVertexAttribArray(aPos);
       gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
-      const locs = {
+      compiledPrograms[index] = prog;
+      uniformLocations[index] = {
         uRes: gl.getUniformLocation(prog, "u_resolution"),
         uTime: gl.getUniformLocation(prog, "u_time"),
         uRot: gl.getUniformLocation(prog, "u_rot"),
         uZoom: gl.getUniformLocation(prog, "u_zoom")
       };
-
-      return { program: prog, locs: locs };
     }
 
-    // Interactive Drag Controls per Canvas
-    function setupInteractions(canvas, state) {
+    // Setup Drag Controls per Canvas
+    canvases.forEach((canvas, idx) => {
+      const state = vpStates[idx];
       canvas.addEventListener('mousedown', e => { state.isDragging = true; state.lastX = e.clientX; state.lastY = e.clientY; });
       window.addEventListener('mouseup', () => state.isDragging = false);
       window.addEventListener('mousemove', e => {
@@ -1373,9 +1388,7 @@
       canvas.addEventListener('wheel', e => {
         state.zoom = Math.max(1.2, Math.min(4.5, state.zoom + e.deltaY * 0.002));
       }, { passive: true });
-    }
-    setupInteractions(canvasA, stateA);
-    setupInteractions(canvasB, stateB);
+    });
 
     function resizeCanvas(gl, canvas) {
       const dpr = window.devicePixelRatio || 1;
@@ -1388,7 +1401,6 @@
       }
     }
 
-    // Execution Logic
     let isRunning = false;
     let isBenchmarkMode = true;
     let benchStart = 0;
@@ -1396,42 +1408,44 @@
     let animId = null;
     let finalReportData = {};
 
+    function getActiveViewportCount() {
+      if (currentLayout === 'single') return 1;
+      if (currentLayout === 'dual') return 2;
+      return 4;
+    }
+
     function executeSuite(benchmarkMode = true) {
       isBenchmarkMode = benchmarkMode;
+      const count = getActiveViewportCount();
 
-      // Compile Pipelines
-      const pipeA = compilePipeline(glA, stateA);
-      progA = pipeA.program;
-      uLocsA = pipeA.locs;
-
-      if (isDualMode) {
-        const pipeB = compilePipeline(glB, stateB);
-        progB = pipeB.program;
-        uLocsB = pipeB.locs;
+      for (let i = 0; i < count; i++) {
+        compilePipeline(i);
       }
 
-      // UI Layout Prep
+      // UI Grid Layout Configuration
+      const container = document.getElementById('viewportContainer');
+      container.className = `viewport-container mode-${currentLayout}`;
+      container.style.display = 'grid';
+
+      for (let i = 0; i < 4; i++) {
+        const box = document.getElementById(`vpBox${i+1}`);
+        const isActive = i < count;
+        box.style.display = isActive ? 'block' : 'none';
+
+        if (isActive) {
+          document.getElementById(`hudTitle${i+1}`).innerText = `VP${i+1}: ${vpStates[i].visualName.toUpperCase()}`;
+          document.getElementById(`hudSpec${i+1}`).innerText = `${vpStates[i].presetName} (${vpStates[i].iters}i/${vpStates[i].steps}s)`;
+        }
+      }
+
       document.getElementById('launcherOverlay').classList.add('hidden');
-      document.getElementById('viewportContainer').style.display = 'grid';
-      document.getElementById('viewportContainer').classList.toggle('split', isDualMode);
-      document.getElementById('vpBoxB').style.display = isDualMode ? 'block' : 'none';
       document.getElementById('masterControls').style.display = 'block';
-
-      // HUD Titles
-      document.getElementById('hudTitleA').innerText = `${stateA.visualName.toUpperCase()}`;
-      document.getElementById('hudSpecA').innerText = `${stateA.presetName} (${stateA.iters}i/${stateA.steps}s)`;
-
-      if (isDualMode) {
-        document.getElementById('hudTitleB').innerText = `${stateB.visualName.toUpperCase()}`;
-        document.getElementById('hudSpecB').innerText = `${stateB.presetName} (${stateB.iters}i/${stateB.steps}s)`;
-      }
 
       isRunning = true;
       benchDuration = parseInt(document.getElementById('runDuration').value) * 1000;
       benchStart = performance.now();
 
-      // Reset Telemetry Buffers
-      [stateA, stateB].forEach(s => {
+      vpStates.forEach(s => {
         s.fpsHistory = [];
         s.gpuHistory = [];
         s.cpuHistory = [];
@@ -1465,7 +1479,11 @@
       document.getElementById('masterControls').style.display = 'none';
       document.getElementById('viewportContainer').style.display = 'none';
 
-      function calcStats(s, gl, canvas) {
+      const count = getActiveViewportCount();
+      const results = [];
+
+      for (let i = 0; i < count; i++) {
+        const s = vpStates[i];
         const sorted = [...s.rollingBuffer].sort((a, b) => a - b);
         const total = sorted.length || 1;
         const avgFt = sorted.reduce((a, b) => a + b, 0) / total;
@@ -1480,69 +1498,53 @@
         const factor = ((s.iters * s.steps) / 5010) * s.aa * (s.shadows ? 1.5 : 1.0);
         const score = Math.round(avgFps * 100 * factor);
 
-        return { avgFps, maxFps, minFps, low1Fps, maxGpu, maxCpu, maxVram, score };
+        results.push({ name: s.visualName, preset: s.presetName, avgFps, maxFps, minFps, low1Fps, maxGpu, maxCpu, maxVram, score });
       }
 
-      const resA = calcStats(stateA, glA, canvasA);
-      const resB = isDualMode ? calcStats(stateB, glB, canvasB) : null;
-      const combinedScore = isDualMode ? Math.round((resA.score + resB.score) / 2) : resA.score;
+      const totalScore = Math.round(results.reduce((acc, r) => acc + r.score, 0) / count);
 
       finalReportData = {
-        score: combinedScore.toLocaleString(),
+        score: totalScore.toLocaleString(),
         adapter: detectedGpuString,
         cpu: detectedCpuString,
         duration: `${benchDuration / 1000}s`,
         timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
-        resA,
-        resB,
-        isDual: isDualMode
+        layout: currentLayout,
+        results
       };
 
       document.getElementById('reportTimestamp').innerText = finalReportData.timestamp;
       document.getElementById('evalScore').innerText = finalReportData.score;
-      document.getElementById('evalHwString').innerText = isDualMode 
-        ? `${detectedGpuString} • DUAL VIEWPORT (${stateA.visualName} vs ${stateB.visualName})`
-        : `${detectedGpuString} • ${stateA.visualName} (${stateA.presetName})`;
+      document.getElementById('evalHwString').innerText = `${detectedGpuString} • ${currentLayout.toUpperCase()} MODE (${count} VIEWPORTS)`;
 
-      // Render Modal Table
-      let tableHtml = `
-        <tr>
-          <td>Topology & Workload</td>
-          <td><strong>${stateA.visualName} (${stateA.presetName})</strong></td>
-          <td>${isDualMode ? `<strong>${stateB.visualName} (${stateB.presetName})</strong>` : 'N/A (Single Mode)'}</td>
-        </tr>
-        <tr>
-          <td>Average Framerate</td>
-          <td><strong>${resA.avgFps} FPS</strong></td>
-          <td>${isDualMode ? `<strong>${resB.avgFps} FPS</strong>` : '--'}</td>
-        </tr>
-        <tr>
-          <td>Framerate Extreme (Max / Min)</td>
-          <td><strong>${resA.maxFps} / ${resA.minFps} FPS</strong></td>
-          <td>${isDualMode ? `<strong>${resB.maxFps} / ${resB.minFps} FPS</strong>` : '--'}</td>
-        </tr>
-        <tr>
-          <td>1% Low Framerate</td>
-          <td><strong>${resA.low1Fps} FPS</strong></td>
-          <td>${isDualMode ? `<strong>${resB.low1Fps} FPS</strong>` : '--'}</td>
-        </tr>
-        <tr>
-          <td>Peak GPU Saturation</td>
-          <td><strong>${resA.maxGpu}%</strong></td>
-          <td>${isDualMode ? `<strong>${resB.maxGpu}%</strong>` : '--'}</td>
-        </tr>
-        <tr>
-          <td>Peak CPU Thread Dispatch</td>
-          <td><strong>${resA.maxCpu}%</strong></td>
-          <td>${isDualMode ? `<strong>${resB.maxCpu}%</strong>` : '--'}</td>
-        </tr>
-        <tr>
-          <td>Peak VRAM Transfer</td>
-          <td><strong>${resA.maxVram.toFixed(2)} GB/s</strong></td>
-          <td>${isDualMode ? `<strong>${resB.maxVram.toFixed(2)} GB/s</strong>` : '--'}</td>
-        </tr>
-      `;
-      document.getElementById('evalReportBody').innerHTML = tableHtml;
+      // Populate Table Columns
+      let headHtml = `<tr><th>Telemetry Metric</th>`;
+      for (let i = 0; i < count; i++) {
+        headHtml += `<th>VP${i+1}: ${results[i].name}</th>`;
+      }
+      headHtml += `</tr>`;
+      document.getElementById('evalReportHead').innerHTML = headHtml;
+
+      const metrics = [
+        { label: "Stress Preset", key: "preset", format: v => `<strong>${v}</strong>` },
+        { label: "Average FPS", key: "avgFps", format: v => `<strong>${v} FPS</strong>` },
+        { label: "Framerate Range", key: "range", format: (v, r) => `<strong>${r.maxFps} / ${r.minFps} FPS</strong>` },
+        { label: "1% Low Framerate", key: "low1Fps", format: v => `<strong>${v} FPS</strong>` },
+        { label: "Peak GPU Load", key: "maxGpu", format: v => `<strong>${v}%</strong>` },
+        { label: "Peak CPU Dispatch", key: "maxCpu", format: v => `<strong>${v}%</strong>` },
+        { label: "VRAM Transfer Rate", key: "maxVram", format: v => `<strong>${v.toFixed(2)} GB/s</strong>` }
+      ];
+
+      let bodyHtml = ``;
+      metrics.forEach(m => {
+        bodyHtml += `<tr><td>${m.label}</td>`;
+        for (let i = 0; i < count; i++) {
+          bodyHtml += `<td>${m.format(results[i][m.key], results[i])}</td>`;
+        }
+        bodyHtml += `</tr>`;
+      });
+      document.getElementById('evalReportBody').innerHTML = bodyHtml;
+
       document.getElementById('evalModal').style.display = 'flex';
     }
 
@@ -1561,52 +1563,41 @@
 
       doc.setFont('courier', 'bold');
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(15);
-      doc.text("VOLUMESHADER_BM • DIAGNOSTIC REPORT", 14, 20);
+      doc.setFontSize(14);
+      doc.text("VOLUMESHADER_BM • MULTI-PIPELINE REPORT", 14, 18);
 
       doc.setFontSize(8);
       doc.setTextColor(130, 130, 130);
-      doc.text(`TIMESTAMP: ${finalReportData.timestamp}`, 14, 26);
-      doc.text(`DIAGNOSTIC MODE: ${finalReportData.isDual ? 'DUAL SPLIT-SCREEN' : 'SINGLE VIEWPORT'}`, 14, 30);
+      doc.text(`TIMESTAMP: ${finalReportData.timestamp}`, 14, 24);
+      doc.text(`LAYOUT: ${finalReportData.layout.toUpperCase()} (${finalReportData.results.length} VIEWPORTS)`, 14, 28);
 
       doc.setDrawColor(50, 50, 50);
-      doc.line(14, 34, 196, 34);
+      doc.line(14, 32, 196, 32);
 
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(9);
-      doc.text("OVERALL BENCHMARK SCORE", 14, 44);
+      doc.text("OVERALL COMPOSITE SCORE", 14, 42);
       doc.setFontSize(26);
-      doc.text(finalReportData.score, 14, 55);
+      doc.text(finalReportData.score, 14, 52);
 
       doc.setFontSize(8);
       doc.setTextColor(180, 180, 180);
-      doc.text(`GPU: ${finalReportData.adapter}`, 14, 62);
-      doc.text(`CPU: ${finalReportData.cpu}`, 14, 66);
+      doc.text(`GPU: ${finalReportData.adapter}`, 14, 58);
+      doc.text(`CPU: ${finalReportData.cpu}`, 14, 62);
 
       doc.setDrawColor(50, 50, 50);
-      doc.line(14, 72, 196, 72);
+      doc.line(14, 68, 196, 68);
 
-      const d = finalReportData;
-      const rows = [
-        ["Configuration", `${stateA.visualName} (${stateA.presetName})`, d.isDual ? `${stateB.visualName} (${stateB.presetName})` : "N/A"],
-        ["Average FPS", `${d.resA.avgFps} FPS`, d.isDual ? `${d.resB.avgFps} FPS` : "N/A"],
-        ["1% Low FPS", `${d.resA.low1Fps} FPS`, d.isDual ? `${d.resB.low1Fps} FPS` : "N/A"],
-        ["Peak GPU Load", `${d.resA.maxGpu}%`, d.isDual ? `${d.resB.maxGpu}%` : "N/A"],
-        ["Peak CPU Thread", `${d.resA.maxCpu}%`, d.isDual ? `${d.resB.maxCpu}%` : "N/A"],
-        ["Peak VRAM Transfer", `${d.resA.maxVram.toFixed(2)} GB/s`, d.isDual ? `${d.resB.maxVram.toFixed(2)} GB/s` : "N/A"]
-      ];
-
-      let y = 84;
-      rows.forEach(([lbl, v1, v2]) => {
+      let y = 78;
+      doc.setFontSize(8);
+      finalReportData.results.forEach((r, idx) => {
         doc.setFillColor(15, 15, 15);
-        doc.rect(14, y - 4, 182, 9, 'F');
-        doc.setTextColor(200, 200, 200);
-        doc.text(lbl, 18, y + 2);
+        doc.rect(14, y - 4, 182, 12, 'F');
         doc.setTextColor(255, 255, 255);
-        doc.text(v1, 80, y + 2);
-        doc.setTextColor(150, 150, 150);
-        doc.text(v2, 145, y + 2);
-        y += 11;
+        doc.text(`VP${idx+1}: ${r.name} (${r.preset})`, 18, y + 1);
+        doc.setTextColor(180, 180, 180);
+        doc.text(`AVG: ${r.avgFps} FPS | LOW: ${r.low1Fps} FPS | GPU: ${r.maxGpu}% | VRAM: ${r.maxVram.toFixed(2)} GB/s`, 18, y + 6);
+        y += 15;
       });
 
       doc.save(`VolumeShader_Report_${Date.now()}.pdf`);
@@ -1615,8 +1606,8 @@
     // Engine Render Loop
     function render(now) {
       if (!isRunning) return;
+      const count = getActiveViewportCount();
 
-      // Handle Progress Bar in Benchmark Mode
       if (isBenchmarkMode) {
         const elapsed = now - benchStart;
         document.getElementById('progressBar').style.width = `${Math.min(100, (elapsed / benchDuration) * 100)}%`;
@@ -1626,7 +1617,12 @@
         }
       }
 
-      function updateAndDraw(gl, canvas, state, uLocs, suffix) {
+      for (let i = 0; i < count; i++) {
+        const gl = glContexts[i];
+        const canvas = canvases[i];
+        const state = vpStates[i];
+        const uLocs = uniformLocations[i];
+
         const fStart = performance.now();
         resizeCanvas(gl, canvas);
 
@@ -1660,27 +1656,22 @@
           const vramGBs = (bytesPerFrame / (delta / 1000)) / 1073741824;
           state.vramHistory.push(vramGBs);
 
-          document.getElementById(`fpsReadout${suffix}`).innerText = curFps;
-          document.getElementById(`ftReadout${suffix}`).innerText = `${delta.toFixed(1)} ms`;
-          document.getElementById(`gpuReadout${suffix}`).innerText = `${gpuEstimate}%`;
-          document.getElementById(`cpuReadout${suffix}`).innerText = `${Math.max(1, cpuLoad)}%`;
-          document.getElementById(`vramReadout${suffix}`).innerText = `${vramGBs.toFixed(2)} GB/s`;
+          document.getElementById(`fpsReadout${i+1}`).innerText = curFps;
+          document.getElementById(`ftReadout${i+1}`).innerText = `${delta.toFixed(1)} ms`;
+          document.getElementById(`gpuReadout${i+1}`).innerText = `${gpuEstimate}%`;
+          document.getElementById(`cpuReadout${i+1}`).innerText = `${Math.max(1, cpuLoad)}%`;
+          document.getElementById(`vramReadout${i+1}`).innerText = `${vramGBs.toFixed(2)} GB/s`;
 
           if (state.rollingBuffer.length >= 20) {
             const sorted = [...state.rollingBuffer].sort((a, b) => a - b);
             const low1 = Math.round(1000 / sorted[Math.floor(sorted.length * 0.95)]);
-            document.getElementById(`lowReadout${suffix}`).innerText = `${low1} FPS`;
+            document.getElementById(`lowReadout${i+1}`).innerText = `${low1} FPS`;
           }
 
           state.frameCounter = 0;
           state.jsTimeAccum = 0;
           state.lastFpsUpdate = now;
         }
-      }
-
-      updateAndDraw(glA, canvasA, stateA, uLocsA, 'A');
-      if (isDualMode) {
-        updateAndDraw(glB, canvasB, stateB, uLocsB, 'B');
       }
 
       animId = requestAnimationFrame(render);
