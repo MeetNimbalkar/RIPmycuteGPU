@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>VOLUMESHADER BM • Quad 2x2 Multi-Pipeline Diagnostic Suite</title>
+  <title>VOLUMESHADER BM • Professional GPU Stress & Diagnostic Lab</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -18,14 +18,12 @@
       --border-focus: #ffffff;
       --text: #ededed;
       --text-dim: #707070;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --accent: #38bdf8;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      border-radius: 0 !important;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0 !important; }
 
     body {
       background-color: var(--bg);
@@ -38,70 +36,49 @@
       -webkit-user-select: none;
     }
 
-    /* Master Dynamic Grid Viewport Container */
     .viewport-container {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
       z-index: 1;
       display: none;
       background: #000;
     }
-    .viewport-container.mode-single {
-      grid-template-columns: 1fr;
-      grid-template-rows: 1fr;
-    }
-    .viewport-container.mode-dual {
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr;
-    }
-    .viewport-container.mode-quad {
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr 1fr;
-    }
+    .viewport-container.mode-single { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+    .viewport-container.mode-dual { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; }
+    .viewport-container.mode-quad { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
 
     .viewport-box {
       position: relative;
-      width: 100%;
-      height: 100%;
+      width: 100%; height: 100%;
       overflow: hidden;
       border: 1px solid var(--border);
     }
 
     canvas {
-      width: 100%;
-      height: 100%;
+      width: 100%; height: 100%;
       display: block;
       cursor: crosshair;
     }
 
-    /* Top Progress Bar */
     .progress-bar-container {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 2px;
+      top: 0; left: 0;
+      width: 100%; height: 3px;
       z-index: 100;
       background: #111;
       display: none;
     }
     .progress-bar-fill {
-      height: 100%;
-      width: 0%;
+      height: 100%; width: 0%;
       background: #ffffff;
       transition: width 0.1s linear;
     }
 
-    /* Pre-Flight Dashboard Overlay */
     .launcher-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
       z-index: 20;
       display: flex;
       align-items: center;
@@ -109,19 +86,17 @@
       padding: 16px;
       background: #000000;
     }
-    .launcher-overlay.hidden {
-      display: none;
-    }
+    .launcher-overlay.hidden { display: none; }
 
     .launcher-panel {
       background: var(--surface);
       border: 1px solid var(--border);
-      max-width: 1080px;
+      max-width: 1160px;
       width: 100%;
       padding: 24px 28px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
       max-height: 96vh;
       overflow-y: auto;
     }
@@ -133,17 +108,17 @@
       justify-content: space-between;
       align-items: flex-start;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 12px;
+      padding-bottom: 10px;
     }
     .title-area h1 {
-      font-size: 1rem;
+      font-size: 1.05rem;
       font-weight: 800;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       font-family: 'JetBrains Mono', monospace;
     }
     .title-area p {
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       color: var(--text-dim);
       margin-top: 2px;
       font-family: 'JetBrains Mono', monospace;
@@ -157,37 +132,43 @@
       text-transform: uppercase;
     }
 
-    /* Hardware Detection Banner */
-    .hw-detect-banner {
+    .fp-grid {
       background: #000;
       border: 1px solid var(--border);
-      padding: 8px 12px;
+      padding: 10px 14px;
       display: grid;
-      grid-template-columns: 1.2fr 1fr;
-      gap: 12px;
-    }
-    .hw-detect-row {
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-      overflow: hidden;
-    }
-    .hw-detect-label { 
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px 16px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.58rem;
-      color: var(--text-dim); 
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
     }
-    .hw-detect-val { 
+    .fp-item { display: flex; flex-direction: column; gap: 1px; overflow: hidden; }
+    .fp-lbl { font-size: 0.58rem; color: var(--text-dim); text-transform: uppercase; }
+    .fp-val { font-size: 0.72rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .dash-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+    .tab-btn {
+      background: #000;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       font-weight: 700;
-      color: #ffffff; 
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      padding: 8px;
+      text-transform: uppercase;
+      cursor: pointer;
     }
+    .tab-btn.active {
+      border-color: #fff;
+      background: var(--surface-sub);
+      color: #fff;
+    }
+
+    .tab-pane { display: none; flex-direction: column; gap: 12px; }
+    .tab-pane.active { display: flex; }
 
     .field-label {
       font-size: 0.65rem;
@@ -201,7 +182,6 @@
       align-items: center;
     }
 
-    /* Screen Mode Grid */
     .mode-switch-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -212,7 +192,7 @@
       border: 1px solid var(--border);
       color: var(--text-dim);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 700;
       padding: 8px;
       text-transform: uppercase;
@@ -220,7 +200,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.15s ease;
     }
     .mode-btn.active {
       border-color: var(--border-focus);
@@ -228,15 +207,12 @@
       color: #fff;
     }
 
-    /* Viewport Configurator Multi-Card Grid */
     .viewport-config-grid {
       display: grid;
       grid-template-columns: 1fr;
       gap: 10px;
     }
-    .viewport-config-grid.layout-dual {
-      grid-template-columns: 1fr 1fr;
-    }
+    .viewport-config-grid.layout-dual,
     .viewport-config-grid.layout-quad {
       grid-template-columns: 1fr 1fr;
     }
@@ -259,7 +235,6 @@
       text-transform: uppercase;
     }
 
-    /* Topologies Grid */
     .visual-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
@@ -274,59 +249,89 @@
       flex-direction: column;
       gap: 2px;
       text-align: center;
-      transition: border-color 0.15s ease;
     }
     .visual-card:hover { border-color: #444; }
-    .visual-card.active {
-      border-color: var(--border-focus);
-      background: #111111;
-    }
-    .visual-title {
-      font-size: 0.65rem;
-      font-weight: 700;
-      color: var(--text);
-    }
-    .visual-sub {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.52rem;
-      color: var(--text-dim);
-    }
+    .visual-card.active { border-color: var(--border-focus); background: #111111; }
+    .visual-title { font-size: 0.65rem; font-weight: 700; color: var(--text); }
+    .visual-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.52rem; color: var(--text-dim); }
     .visual-card.active .visual-sub { color: #fff; }
 
-    /* Difficulty Presets Grid */
     .presets-matrix {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 3px;
+      gap: 5px;
     }
     .preset-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      padding: 6px 8px;
+      padding: 8px 10px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
-      gap: 1px;
-      transition: border-color 0.15s ease;
+      gap: 2px;
     }
     .preset-card:hover { border-color: #444; }
-    .preset-card.active {
-      border-color: var(--border-focus);
-      background: #111111;
-    }
-    .preset-name {
-      font-size: 0.65rem;
-      font-weight: 600;
-      color: var(--text);
-    }
-    .preset-detail {
+    .preset-card.active { border-color: var(--border-focus); background: #111111; }
+    .preset-name { font-size: 0.68rem; font-weight: 700; color: var(--text); }
+    .preset-detail { font-family: 'JetBrains Mono', monospace; font-size: 0.56rem; color: var(--text-dim); }
+    .preset-rt-notice {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.55rem;
-      color: var(--text-dim);
+      font-size: 0.52rem;
+      font-weight: 700;
+      margin-top: 2px;
+      line-height: 1.3;
     }
     .preset-card.active .preset-detail { color: var(--text); }
 
-    /* Action Row */
+    .stress-control-matrix {
+      background: #000;
+      border: 1px solid var(--border);
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 24px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .slider-row { display: flex; flex-direction: column; gap: 4px; }
+    .slider-meta { display: flex; justify-content: space-between; font-size: 0.65rem; }
+    .slider-meta span:last-child { color: var(--accent); font-weight: 700; }
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      background: #222;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px; height: 12px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .compare-box {
+      background: #000;
+      border: 1px solid var(--border);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .compare-header {
+      font-size: 0.72rem;
+      font-weight: 800;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
     .control-row {
       display: grid;
       grid-template-columns: 130px 1fr 1fr;
@@ -358,7 +363,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.15s ease;
     }
     .btn-run:hover { background: #cccccc; border-color: #cccccc; }
     .btn-view {
@@ -374,23 +378,20 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: border-color 0.15s ease, background 0.15s ease;
     }
     .btn-view:hover { border-color: #888; background: #0d0d0d; }
 
-    /* Independent In-Run HUD (Per Viewport) */
     .run-hud {
       position: absolute;
-      top: 12px;
-      left: 12px;
+      top: 12px; left: 12px;
       z-index: 10;
-      background: rgba(0, 0, 0, 0.92);
+      background: rgba(0, 0, 0, 0.94);
       border: 1px solid var(--border);
       padding: 10px 14px;
-      width: 250px;
+      width: 280px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
       backdrop-filter: blur(8px);
     }
     .hud-title {
@@ -416,7 +417,7 @@
     }
     .hud-fps-unit {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: var(--text-dim);
       margin-left: 2px;
     }
@@ -435,11 +436,9 @@
     .hud-tel-lbl { color: var(--text-dim); font-size: 0.52rem; text-transform: uppercase; }
     .hud-tel-val { color: var(--text); font-weight: 700; font-size: 0.7rem; }
 
-    /* Master Overlay Button */
     .master-controls {
       position: fixed;
-      bottom: 16px;
-      right: 16px;
+      bottom: 16px; right: 16px;
       z-index: 50;
       display: none;
     }
@@ -456,13 +455,10 @@
     }
     .btn-abort-master:hover { border-color: #fff; }
 
-    /* Modal Evaluation Sheet */
     .modal-sheet {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
       background: rgba(0, 0, 0, 0.94);
       z-index: 1000;
       display: none;
@@ -473,12 +469,12 @@
     .modal-box {
       background: #000000;
       border: 1px solid var(--border-focus);
-      max-width: 760px;
+      max-width: 860px;
       width: 100%;
       padding: 24px 28px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
       max-height: 94vh;
       overflow-y: auto;
     }
@@ -492,17 +488,17 @@
       text-transform: uppercase;
       letter-spacing: 0.08em;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 10px;
+      padding-bottom: 8px;
       display: flex;
       justify-content: space-between;
     }
     .score-output {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 3.2rem;
+      font-size: 3rem;
       font-weight: 800;
       line-height: 1;
       text-align: center;
-      margin: 2px 0 4px 0;
+      margin: 2px 0;
     }
     .eval-subtitle {
       font-family: 'JetBrains Mono', monospace;
@@ -517,7 +513,7 @@
       border-collapse: collapse;
       border: 1px solid var(--border);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.68rem;
+      font-size: 0.65rem;
     }
     .report-table th, .report-table td {
       border: 1px solid var(--border);
@@ -529,44 +525,27 @@
       color: var(--text-dim);
       font-weight: 500;
       text-transform: uppercase;
-      font-size: 0.6rem;
+      font-size: 0.58rem;
     }
     .report-table td strong { color: #fff; }
 
     .btn-action-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
       margin-top: 4px;
     }
-    .btn-pdf {
-      background: #ffffff;
-      color: #000000;
-      border: 1px solid #ffffff;
+    .btn-action-row button {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      padding: 10px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-    .btn-pdf:hover { background: #ccc; }
-    .btn-dismiss {
-      background: transparent;
-      color: var(--text);
-      border: 1px solid var(--border);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 700;
       text-transform: uppercase;
       padding: 10px;
       cursor: pointer;
     }
-    .btn-dismiss:hover { border-color: #888; }
+    .btn-pdf { background: #fff; color: #000; border: 1px solid #fff; }
+    .btn-save-ab { background: var(--surface-sub); color: #fff; border: 1px solid var(--border); }
+    .btn-dismiss { background: transparent; color: var(--text); border: 1px solid var(--border); }
   </style>
 </head>
 <body>
@@ -575,308 +554,312 @@
     <div class="progress-bar-fill" id="progressBar"></div>
   </div>
 
-  <!-- Master Split Screen Viewport Container -->
   <div class="viewport-container mode-single" id="viewportContainer">
+    <!-- Viewport 1 -->
     <div class="viewport-box" id="vpBox1">
       <canvas id="glcanvas1"></canvas>
       <div class="run-hud" id="hud1">
         <div class="hud-title">
           <span id="hudTitle1">VP1: MANDEL</span>
-          <span id="hudSpec1">5i / 1002s</span>
+          <span id="hudSpec1">9i / 1002s</span>
         </div>
         <div class="hud-readout">
-          <div>
-            <span class="hud-fps" id="fpsReadout1">0</span>
-            <span class="hud-fps-unit">FPS</span>
-          </div>
-          <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim);" id="ftReadout1">
-            0.0 ms
-          </div>
+          <div><span class="hud-fps" id="fpsReadout1">0</span><span class="hud-fps-unit">FPS</span></div>
+          <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim);" id="ftReadout1">0.0 ms</div>
         </div>
         <div class="hud-telemetry-grid">
-          <div class="hud-tel-item">
-            <span class="hud-tel-lbl">GPU Load</span>
-            <span class="hud-tel-val" id="gpuReadout1">0%</span>
-          </div>
-          <div class="hud-tel-item">
-            <span class="hud-tel-lbl">CPU Dispatch</span>
-            <span class="hud-tel-val" id="cpuReadout1">0%</span>
-          </div>
-          <div class="hud-tel-item">
-            <span class="hud-tel-lbl">VRAM Transfer</span>
-            <span class="hud-tel-val" id="vramReadout1">0.00 GB/s</span>
-          </div>
-          <div class="hud-tel-item">
-            <span class="hud-tel-lbl">1% Low</span>
-            <span class="hud-tel-val" id="lowReadout1">-- FPS</span>
-          </div>
+          <div class="hud-tel-item"><span class="hud-tel-lbl">GPU Saturation</span><span class="hud-tel-val" id="gpuReadout1">0%</span></div>
+          <div class="hud-tel-item"><span class="hud-tel-lbl">CPU Thread</span><span class="hud-tel-val" id="cpuReadout1">0%</span></div>
+          <div class="hud-tel-item"><span class="hud-tel-lbl">VRAM Transfer</span><span class="hud-tel-val" id="vramReadout1">0.00 GB/s</span></div>
+          <div class="hud-tel-item"><span class="hud-tel-lbl">Stability Index</span><span class="hud-tel-val" id="stabReadout1">100%</span></div>
         </div>
       </div>
     </div>
 
+    <!-- Viewport 2 -->
     <div class="viewport-box" id="vpBox2" style="display: none;">
       <canvas id="glcanvas2"></canvas>
       <div class="run-hud" id="hud2">
         <div class="hud-title">
           <span id="hudTitle2">VP2: MENGER</span>
-          <span id="hudSpec2">5i / 1002s</span>
+          <span id="hudSpec2">9i / 1002s</span>
         </div>
         <div class="hud-readout">
-          <div>
-            <span class="hud-fps" id="fpsReadout2">0</span>
-            <span class="hud-fps-unit">FPS</span>
-          </div>
-          <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim);" id="ftReadout2">
-            0.0 ms
-          </div>
+          <div><span class="hud-fps" id="fpsReadout2">0</span><span class="hud-fps-unit">FPS</span></div>
+          <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim);" id="ftReadout2">0.0 ms</div>
         </div>
         <div class="hud-telemetry-grid">
-          <div class="hud-tel-item">
-            <span class="hud-tel-lbl">GPU Load</span>
-            <span class="hud-tel-val" id="gpuReadout2">0%</span>
-          </div>
-          <div class="hud-tel-item">
-            <span class="hud-tel-lbl">CPU Dispatch</span>
-            <span class="hud-tel-val" id="cpuReadout2">0%</span>
-          </div>
-          <div class="hud-tel-item">
-            <span class="hud-tel-lbl">VRAM Transfer</span>
-            <span class="hud-tel-val" id="vramReadout2">0.00 GB/s</span>
-          </div>
-          <div class="hud-tel-item">
-            <span class="hud-tel-lbl">1% Low</span>
-            <span class="hud-tel-val" id="lowReadout2">-- FPS</span>
-          </div>
+          <div class="hud-tel-item"><span class="hud-tel-lbl">GPU Saturation</span><span class="hud-tel-val" id="gpuReadout2">0%</span></div>
+          <div class="hud-tel-item"><span class="hud-tel-lbl">CPU Thread</span><span class="hud-tel-val" id="cpuReadout2">0%</span></div>
+          <div class="hud-tel-item"><span class="hud-tel-lbl">VRAM Transfer</span><span class="hud-tel-val" id="vramReadout2">0.00 GB/s</span></div>
+          <div class="hud-tel-item"><span class="hud-tel-lbl">Stability Index</span><span class="hud-tel-val" id="stabReadout2">100%</span></div>
         </div>
       </div>
     </div>
 
+    <!-- Viewport 3 -->
     <div class="viewport-box" id="vpBox3" style="display: none;">
       <canvas id="glcanvas3"></canvas>
       <div class="run-hud" id="hud3">
         <div class="hud-title">
-          <span id="hudTitle3">VP3: KLEIN</span>
-          <span id="hudSpec3">5i / 1002s</span>
+          <span id="hudTitle3">VP3: GYROID</span>
+          <span id="hudSpec3">50i / 4000s</span>
         </div>
         <div class="hud-readout">
-          <div>
-            <span class="hud-fps" id="fpsReadout3">0</span>
-            <span class="hud-fps-unit">FPS</span>
-          </div>
-          <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim);" id="ftReadout3">
-            0.0 ms
-          </div>
+          <div><span class="hud-fps" id="fpsReadout3">0</span><span class="hud-fps-unit">FPS</span></div>
+          <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim);" id="ftReadout3">0.0 ms</div>
         </div>
         <div class="hud-telemetry-grid">
-          <div class="hud-tel-item">
-            <span class="hud-tel-lbl">GPU Load</span>
-            <span class="hud-tel-val" id="gpuReadout3">0%</span>
-          </div>
-          <div class="hud-tel-item">
-            <span class="hud-tel-lbl">CPU Dispatch</span>
-            <span class="hud-tel-val" id="cpuReadout3">0%</span>
-          </div>
-          <div class="hud-tel-item">
-            <span class="hud-tel-lbl">VRAM Transfer</span>
-            <span class="hud-tel-val" id="vramReadout3">0.00 GB/s</span>
-          </div>
-          <div class="hud-tel-item">
-            <span class="hud-tel-lbl">1% Low</span>
-            <span class="hud-tel-val" id="lowReadout3">-- FPS</span>
-          </div>
+          <div class="hud-tel-item"><span class="hud-tel-lbl">GPU Saturation</span><span class="hud-tel-val" id="gpuReadout3">0%</span></div>
+          <div class="hud-tel-item"><span class="hud-tel-lbl">CPU Thread</span><span class="hud-tel-val" id="cpuReadout3">0%</span></div>
+          <div class="hud-tel-item"><span class="hud-tel-lbl">VRAM Transfer</span><span class="hud-tel-val" id="vramReadout3">0.00 GB/s</span></div>
+          <div class="hud-tel-item"><span class="hud-tel-lbl">Stability Index</span><span class="hud-tel-val" id="stabReadout3">100%</span></div>
         </div>
       </div>
     </div>
 
+    <!-- Viewport 4 -->
     <div class="viewport-box" id="vpBox4" style="display: none;">
       <canvas id="glcanvas4"></canvas>
       <div class="run-hud" id="hud4">
         <div class="hud-title">
-          <span id="hudTitle4">VP4: NEBULA</span>
-          <span id="hudSpec4">5i / 1002s</span>
+          <span id="hudTitle4">VP4: KNOT</span>
+          <span id="hudSpec4">65i / 5500s</span>
         </div>
         <div class="hud-readout">
-          <div>
-            <span class="hud-fps" id="fpsReadout4">0</span>
-            <span class="hud-fps-unit">FPS</span>
-          </div>
-          <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim);" id="ftReadout4">
-            0.0 ms
-          </div>
+          <div><span class="hud-fps" id="fpsReadout4">0</span><span class="hud-fps-unit">FPS</span></div>
+          <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim);" id="ftReadout4">0.0 ms</div>
         </div>
         <div class="hud-telemetry-grid">
-          <div class="hud-tel-item">
-            <span class="hud-tel-lbl">GPU Load</span>
-            <span class="hud-tel-val" id="gpuReadout4">0%</span>
-          </div>
-          <div class="hud-tel-item">
-            <span class="hud-tel-lbl">CPU Dispatch</span>
-            <span class="hud-tel-val" id="cpuReadout4">0%</span>
-          </div>
-          <div class="hud-tel-item">
-            <span class="hud-tel-lbl">VRAM Transfer</span>
-            <span class="hud-tel-val" id="vramReadout4">0.00 GB/s</span>
-          </div>
-          <div class="hud-tel-item">
-            <span class="hud-tel-lbl">1% Low</span>
-            <span class="hud-tel-val" id="lowReadout4">-- FPS</span>
-          </div>
+          <div class="hud-tel-item"><span class="hud-tel-lbl">GPU Saturation</span><span class="hud-tel-val" id="gpuReadout4">0%</span></div>
+          <div class="hud-tel-item"><span class="hud-tel-lbl">CPU Thread</span><span class="hud-tel-val" id="cpuReadout4">0%</span></div>
+          <div class="hud-tel-item"><span class="hud-tel-lbl">VRAM Transfer</span><span class="hud-tel-val" id="vramReadout4">0.00 GB/s</span></div>
+          <div class="hud-tel-item"><span class="hud-tel-lbl">Stability Index</span><span class="hud-tel-val" id="stabReadout4">100%</span></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Master Exit Button -->
   <div class="master-controls" id="masterControls">
     <button class="btn-abort-master" onclick="abortExecution()">✕ Exit View</button>
   </div>
 
-  <!-- High-Efficiency Pre-Flight Launch Dashboard -->
   <div class="launcher-overlay" id="launcherOverlay">
     <div class="launcher-panel">
       <div class="panel-header">
         <div class="title-area">
-          <h1>VOLUMESHADER_BM</h1>
-          <p>Quad 2x2 Multi-Pipeline Diagnostic Suite</p>
+          <h1>VOLUMESHADER_BM • PRO LAB</h1>
+          <p>Silicon Profiling, Hardware Fingerprint & Stability Analysis Suite</p>
         </div>
-        <div class="spec-badge">SPEC 2026.1</div>
+        <div class="spec-badge">SPEC 2026.2</div>
       </div>
 
-      <!-- Live Hardware Detection Strip -->
-      <div class="hw-detect-banner">
-        <div class="hw-detect-row">
-          <span class="hw-detect-label">ADAPTER IDENTIFIER</span>
-          <span class="hw-detect-val" id="detectedGpuModel">PROBING GPU INTERFACE...</span>
+      <div class="fp-grid">
+        <div class="fp-item"><span class="fp-lbl">UNMASKED RENDERER</span><span class="fp-val" id="fpRenderer">Probing...</span></div>
+        <div class="fp-item"><span class="fp-lbl">GRAPHICS DRIVER / API</span><span class="fp-val" id="fpDriver">Probing...</span></div>
+        <div class="fp-item"><span class="fp-lbl">BROWSER CONTEXT</span><span class="fp-val" id="fpBrowser">Probing...</span></div>
+        <div class="fp-item"><span class="fp-lbl">DISPLAY RESOLUTION & DPR</span><span class="fp-val" id="fpRes">Probing...</span></div>
+        <div class="fp-item"><span class="fp-lbl">MAX TEXTURE / VIEWPORT</span><span class="fp-val" id="fpLimits">Probing...</span></div>
+        <div class="fp-item"><span class="fp-lbl">SHADER ALU PRECISION</span><span class="fp-val" id="fpPrecision">Probing...</span></div>
+      </div>
+
+      <div class="dash-tabs">
+        <button class="tab-btn active" onclick="switchLabTab('tab-bench', this)">1. Workload Benchmarks</button>
+        <button class="tab-btn" onclick="switchLabTab('tab-stress', this)">2. Interactive Stress Matrix</button>
+        <button class="tab-btn" onclick="switchLabTab('tab-compare', this)">3. Before / After Profiler</button>
+      </div>
+
+      <!-- Tab 1: Workload Benchmarks with Calibrated Difficulty Presets -->
+      <div class="tab-pane active" id="tab-bench">
+        <div>
+          <div class="field-label">Layout Architecture</div>
+          <div class="mode-switch-grid">
+            <button class="mode-btn active" id="btnModeSingle" onclick="setLayoutMode('single')">Single View</button>
+            <button class="mode-btn" id="btnModeDual" onclick="setLayoutMode('dual')">Dual Split (1x2)</button>
+            <button class="mode-btn" id="btnModeQuad" onclick="setLayoutMode('quad')">Quad Grid (2x2)</button>
+          </div>
         </div>
-        <div class="hw-detect-row">
-          <span class="hw-detect-label">PLATFORM CONCURRENCY</span>
-          <span class="hw-detect-val" id="detectedCpuArch">PROBING CPU CORES...</span>
+
+        <div class="viewport-config-grid" id="vpConfigGrid">
+          <!-- Viewport 1 -->
+          <div class="config-card" id="cfgCard1">
+            <div class="config-card-header" id="cfgHeader1">Viewport 1 Configuration</div>
+            <div>
+              <div class="field-label">Topology</div>
+              <div class="visual-grid">
+                <div class="visual-card active" onclick="setVpVisual(0, 0, 'Mandelbulb', this)"><div class="visual-title">Mandel</div><div class="visual-sub">Sphere</div></div>
+                <div class="visual-card" onclick="setVpVisual(0, 1, 'Menger Cube', this)"><div class="visual-title">Menger</div><div class="visual-sub">Cube</div></div>
+                <div class="visual-card" onclick="setVpVisual(0, 2, 'Julia 4D', this)"><div class="visual-title">Julia</div><div class="visual-sub">4D Slice</div></div>
+                <div class="visual-card" onclick="setVpVisual(0, 3, 'Gyroid', this)"><div class="visual-title">Gyroid</div><div class="visual-sub">Membrane</div></div>
+                <div class="visual-card" onclick="setVpVisual(0, 4, 'Torus Knot', this)"><div class="visual-title">Knot</div><div class="visual-sub">Braided</div></div>
+              </div>
+            </div>
+            <div>
+              <div class="field-label">Calibrated Difficulty Tiers</div>
+              <div class="presets-matrix">
+                <div class="preset-card" onclick="setVpPreset(0, 2, 250, 1, 0, 'Simple', this)">
+                  <div class="preset-name">Simple</div>
+                  <div class="preset-detail">2 iterations / 250s</div>
+                </div>
+                <div class="preset-card active" onclick="setVpPreset(0, 9, 1002, 1, 0, 'Standard', this)">
+                  <div class="preset-name">Standard</div>
+                  <div class="preset-detail">9 iterations / 1002s</div>
+                </div>
+                <div class="preset-card" onclick="setVpPreset(0, 25, 1800, 1, 0, 'Advanced', this)">
+                  <div class="preset-name">Advanced</div>
+                  <div class="preset-detail">25 iterations / 1800s</div>
+                </div>
+                <div class="preset-card" onclick="setVpPreset(0, 35, 2500, 2, 1, 'Extreme', this)">
+                  <div class="preset-name" style="color: #facc15;">Extreme</div>
+                  <div class="preset-detail">35 iterations / 2500s / 2x SSAA</div>
+                </div>
+                <div class="preset-card" onclick="setVpPreset(0, 50, 4000, 4, 1, 'Ultra Ext.', this)">
+                  <div class="preset-name" style="color: #fb923c;">Ultra Extreme</div>
+                  <div class="preset-detail">50 iterations / 4000s / 4x SSAA</div>
+                  <div class="preset-rt-notice" style="color: #fb923c;">High Ray Tracing Test • Recommended: RTX / RDNA</div>
+                </div>
+                <div class="preset-card" onclick="setVpPreset(0, 65, 5500, 4, 1, 'Ultra Ext.+', this)">
+                  <div class="preset-name" style="color: var(--danger);">Ultra Extreme+</div>
+                  <div class="preset-detail">65 iterations / 5500s / 4x SSAA</div>
+                  <div class="preset-rt-notice" style="color: var(--danger);">Advanced Ray Tracing Test • Recommended: RTX / RDNA</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Viewport 2 -->
+          <div class="config-card" id="cfgCard2" style="display: none;">
+            <div class="config-card-header">Viewport 2 Configuration</div>
+            <div>
+              <div class="field-label">Topology</div>
+              <div class="visual-grid">
+                <div class="visual-card" onclick="setVpVisual(1, 0, 'Mandelbulb', this)"><div class="visual-title">Mandel</div><div class="visual-sub">Sphere</div></div>
+                <div class="visual-card active" onclick="setVpVisual(1, 1, 'Menger Cube', this)"><div class="visual-title">Menger</div><div class="visual-sub">Cube</div></div>
+                <div class="visual-card" onclick="setVpVisual(1, 2, 'Julia 4D', this)"><div class="visual-title">Julia</div><div class="visual-sub">4D Slice</div></div>
+                <div class="visual-card" onclick="setVpVisual(1, 3, 'Gyroid', this)"><div class="visual-title">Gyroid</div><div class="visual-sub">Membrane</div></div>
+                <div class="visual-card" onclick="setVpVisual(1, 4, 'Torus Knot', this)"><div class="visual-title">Knot</div><div class="visual-sub">Braided</div></div>
+              </div>
+            </div>
+            <div>
+              <div class="field-label">Calibrated Difficulty Tiers</div>
+              <div class="presets-matrix">
+                <div class="preset-card" onclick="setVpPreset(1, 2, 250, 1, 0, 'Simple', this)"><div class="preset-name">Simple</div><div class="preset-detail">2 iterations / 250s</div></div>
+                <div class="preset-card active" onclick="setVpPreset(1, 9, 1002, 1, 0, 'Standard', this)"><div class="preset-name">Standard</div><div class="preset-detail">9 iterations / 1002s</div></div>
+                <div class="preset-card" onclick="setVpPreset(1, 25, 1800, 1, 0, 'Advanced', this)"><div class="preset-name">Advanced</div><div class="preset-detail">25 iterations / 1800s</div></div>
+                <div class="preset-card" onclick="setVpPreset(1, 35, 2500, 2, 1, 'Extreme', this)"><div class="preset-name" style="color: #facc15;">Extreme</div><div class="preset-detail">35 iterations / 2500s / 2x SSAA</div></div>
+                <div class="preset-card" onclick="setVpPreset(1, 50, 4000, 4, 1, 'Ultra Ext.', this)"><div class="preset-name" style="color: #fb923c;">Ultra Extreme</div><div class="preset-detail">50 iterations / 4000s / 4x SSAA</div><div class="preset-rt-notice" style="color: #fb923c;">High Ray Tracing Test • Recommended: RTX / RDNA</div></div>
+                <div class="preset-card" onclick="setVpPreset(1, 65, 5500, 4, 1, 'Ultra Ext.+', this)"><div class="preset-name" style="color: var(--danger);">Ultra Extreme+</div><div class="preset-detail">65 iterations / 5500s / 4x SSAA</div><div class="preset-rt-notice" style="color: var(--danger);">Advanced Ray Tracing Test • Recommended: RTX / RDNA</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Viewport 3 -->
+          <div class="config-card" id="cfgCard3" style="display: none;">
+            <div class="config-card-header">Viewport 3 Configuration</div>
+            <div>
+              <div class="field-label">Topology</div>
+              <div class="visual-grid">
+                <div class="visual-card" onclick="setVpVisual(2, 0, 'Mandelbulb', this)"><div class="visual-title">Mandel</div><div class="visual-sub">Sphere</div></div>
+                <div class="visual-card" onclick="setVpVisual(2, 1, 'Menger Cube', this)"><div class="visual-title">Menger</div><div class="visual-sub">Cube</div></div>
+                <div class="visual-card" onclick="setVpVisual(2, 2, 'Julia 4D', this)"><div class="visual-title">Julia</div><div class="visual-sub">4D Slice</div></div>
+                <div class="visual-card active" onclick="setVpVisual(2, 3, 'Gyroid', this)"><div class="visual-title">Gyroid</div><div class="visual-sub">Membrane</div></div>
+                <div class="visual-card" onclick="setVpVisual(2, 4, 'Torus Knot', this)"><div class="visual-title">Knot</div><div class="visual-sub">Braided</div></div>
+              </div>
+            </div>
+            <div>
+              <div class="field-label">Calibrated Difficulty Tiers</div>
+              <div class="presets-matrix">
+                <div class="preset-card" onclick="setVpPreset(2, 2, 250, 1, 0, 'Simple', this)"><div class="preset-name">Simple</div><div class="preset-detail">2 iterations / 250s</div></div>
+                <div class="preset-card" onclick="setVpPreset(2, 9, 1002, 1, 0, 'Standard', this)"><div class="preset-name">Standard</div><div class="preset-detail">9 iterations / 1002s</div></div>
+                <div class="preset-card" onclick="setVpPreset(2, 25, 1800, 1, 0, 'Advanced', this)"><div class="preset-name">Advanced</div><div class="preset-detail">25 iterations / 1800s</div></div>
+                <div class="preset-card" onclick="setVpPreset(2, 35, 2500, 2, 1, 'Extreme', this)"><div class="preset-name" style="color: #facc15;">Extreme</div><div class="preset-detail">35 iterations / 2500s / 2x SSAA</div></div>
+                <div class="preset-card active" onclick="setVpPreset(2, 50, 4000, 4, 1, 'Ultra Ext.', this)"><div class="preset-name" style="color: #fb923c;">Ultra Extreme</div><div class="preset-detail">50 iterations / 4000s / 4x SSAA</div><div class="preset-rt-notice" style="color: #fb923c;">High Ray Tracing Test • Recommended: RTX / RDNA</div></div>
+                <div class="preset-card" onclick="setVpPreset(2, 65, 5500, 4, 1, 'Ultra Ext.+', this)"><div class="preset-name" style="color: var(--danger);">Ultra Extreme+</div><div class="preset-detail">65 iterations / 5500s / 4x SSAA</div><div class="preset-rt-notice" style="color: var(--danger);">Advanced Ray Tracing Test • Recommended: RTX / RDNA</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Viewport 4 -->
+          <div class="config-card" id="cfgCard4" style="display: none;">
+            <div class="config-card-header">Viewport 4 Configuration</div>
+            <div>
+              <div class="field-label">Topology</div>
+              <div class="visual-grid">
+                <div class="visual-card" onclick="setVpVisual(3, 0, 'Mandelbulb', this)"><div class="visual-title">Mandel</div><div class="visual-sub">Sphere</div></div>
+                <div class="visual-card" onclick="setVpVisual(3, 1, 'Menger Cube', this)"><div class="visual-title">Menger</div><div class="visual-sub">Cube</div></div>
+                <div class="visual-card" onclick="setVpVisual(3, 2, 'Julia 4D', this)"><div class="visual-title">Julia</div><div class="visual-sub">4D Slice</div></div>
+                <div class="visual-card" onclick="setVpVisual(3, 3, 'Gyroid', this)"><div class="visual-title">Gyroid</div><div class="visual-sub">Membrane</div></div>
+                <div class="visual-card active" onclick="setVpVisual(3, 4, 'Torus Knot', this)"><div class="visual-title">Knot</div><div class="visual-sub">Braided</div></div>
+              </div>
+            </div>
+            <div>
+              <div class="field-label">Calibrated Difficulty Tiers</div>
+              <div class="presets-matrix">
+                <div class="preset-card" onclick="setVpPreset(3, 2, 250, 1, 0, 'Simple', this)"><div class="preset-name">Simple</div><div class="preset-detail">2 iterations / 250s</div></div>
+                <div class="preset-card" onclick="setVpPreset(3, 9, 1002, 1, 0, 'Standard', this)"><div class="preset-name">Standard</div><div class="preset-detail">9 iterations / 1002s</div></div>
+                <div class="preset-card" onclick="setVpPreset(3, 25, 1800, 1, 0, 'Advanced', this)"><div class="preset-name">Advanced</div><div class="preset-detail">25 iterations / 1800s</div></div>
+                <div class="preset-card" onclick="setVpPreset(3, 35, 2500, 2, 1, 'Extreme', this)"><div class="preset-name" style="color: #facc15;">Extreme</div><div class="preset-detail">35 iterations / 2500s / 2x SSAA</div></div>
+                <div class="preset-card" onclick="setVpPreset(3, 50, 4000, 4, 1, 'Ultra Ext.', this)"><div class="preset-name" style="color: #fb923c;">Ultra Extreme</div><div class="preset-detail">50 iterations / 4000s / 4x SSAA</div><div class="preset-rt-notice" style="color: #fb923c;">High Ray Tracing Test • Recommended: RTX / RDNA</div></div>
+                <div class="preset-card active" onclick="setVpPreset(3, 65, 5500, 4, 1, 'Ultra Ext.+', this)"><div class="preset-name" style="color: var(--danger);">Ultra Extreme+</div><div class="preset-detail">65 iterations / 5500s / 4x SSAA</div><div class="preset-rt-notice" style="color: var(--danger);">Advanced Ray Tracing Test • Recommended: RTX / RDNA</div></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Layout Mode Selector -->
-      <div>
-        <div class="field-label">Diagnostic Screen Mode</div>
-        <div class="mode-switch-grid">
-          <button class="mode-btn active" id="btnModeSingle" onclick="setLayoutMode('single')">1. Single View</button>
-          <button class="mode-btn" id="btnModeDual" onclick="setLayoutMode('dual')">2. Dual Split (1x2)</button>
-          <button class="mode-btn" id="btnModeQuad" onclick="setLayoutMode('quad')">3. Quad Grid (2x2)</button>
+      <!-- Tab 2: Interactive Stress Matrix -->
+      <div class="tab-pane" id="tab-stress">
+        <div class="field-label">Interactive Direct Hardware Loading Controls</div>
+        <div class="stress-control-matrix">
+          <div class="slider-row">
+            <div class="slider-meta"><span>RESOLUTION SCALE (BANDWIDTH PENALTY)</span><span id="lblResScale">1.0x (Native)</span></div>
+            <input type="range" id="rngResScale" min="0.25" max="2.5" step="0.25" value="1.0" oninput="updateLiveStress()">
+          </div>
+          <div class="slider-row">
+            <div class="slider-meta"><span>MAX RAY STEPS (FILLRATE LOAD)</span><span id="lblRaySteps">1500 steps</span></div>
+            <input type="range" id="rngRaySteps" min="200" max="6000" step="100" value="1500" oninput="updateLiveStress()">
+          </div>
+          <div class="slider-row">
+            <div class="slider-meta"><span>FRACTAL ALGORITHM ITERATIONS (ALU STRESS)</span><span id="lblIters">35 iterations</span></div>
+            <input type="range" id="rngIters" min="2" max="80" step="1" value="35" oninput="updateLiveStress()">
+          </div>
+          <div class="slider-row">
+            <div class="slider-meta"><span>MULTI-SAMPLE SUPERSAMPLING (VRAM LOAD)</span><span id="lblSSAA">1x (Standard)</span></div>
+            <input type="range" id="rngSSAA" min="1" max="4" step="1" value="1" oninput="updateLiveStress()">
+          </div>
         </div>
       </div>
 
-      <!-- Multi-Card Viewport Configurator -->
-      <div class="viewport-config-grid" id="vpConfigGrid">
-        <!-- Viewport 1 -->
-        <div class="config-card" id="cfgCard1">
-          <div class="config-card-header" id="cfgHeader1">Viewport 1 Configuration</div>
-          <div>
-            <div class="field-label">Topology</div>
-            <div class="visual-grid">
-              <div class="visual-card active" onclick="setVpVisual(0, 0, 'Mandelbulb', this)"><div class="visual-title">Mandel</div><div class="visual-sub">Sphere</div></div>
-              <div class="visual-card" onclick="setVpVisual(0, 1, 'Menger Cube', this)"><div class="visual-title">Menger</div><div class="visual-sub">Cube</div></div>
-              <div class="visual-card" onclick="setVpVisual(0, 2, 'Julia 4D', this)"><div class="visual-title">Julia</div><div class="visual-sub">4D Slice</div></div>
-              <div class="visual-card" onclick="setVpVisual(0, 3, 'Kleinian IFS', this)"><div class="visual-title">Klein</div><div class="visual-sub">Matrix</div></div>
-              <div class="visual-card" onclick="setVpVisual(0, 4, 'Nebula', this)"><div class="visual-title">Nebula</div><div class="visual-sub">Smoke</div></div>
+      <!-- Tab 3: Profiler Comparison -->
+      <div class="tab-pane" id="tab-compare">
+        <div class="compare-grid">
+          <div class="compare-box">
+            <div class="compare-header">
+              <span>BASELINE PROFILE [A]</span>
+              <span id="compStatusA" style="color: var(--text-dim);">EMPTY</span>
+            </div>
+            <div id="compBodyA" style="font-size: 0.65rem; color: var(--text-dim); line-height: 1.6;">
+              Run a benchmark, then click "Store in A/B Profiler" to establish your baseline (e.g. Current Driver, Stock Power, Cooling configuration).
             </div>
           </div>
-          <div>
-            <div class="field-label">Stress Preset</div>
-            <div class="presets-matrix">
-              <div class="preset-card" onclick="setVpPreset(0, 2, 250, 1, 0, 'Simple', this)"><div class="preset-name">Simple</div><div class="preset-detail">2i / 250s</div></div>
-              <div class="preset-card active" onclick="setVpPreset(0, 5, 1002, 1, 0, 'Standard', this)"><div class="preset-name">Standard</div><div class="preset-detail">5i / 1002s</div></div>
-              <div class="preset-card" onclick="setVpPreset(0, 7, 1500, 1, 0, 'Advanced', this)"><div class="preset-name">Advanced</div><div class="preset-detail">7i / 1500s</div></div>
-              <div class="preset-card" onclick="setVpPreset(0, 9, 2000, 1, 0, 'Extreme', this)"><div class="preset-name">Extreme</div><div class="preset-detail">9i / 2000s</div></div>
-              <div class="preset-card" onclick="setVpPreset(0, 25, 3000, 2, 1, 'Ultra Ext.', this)"><div class="preset-name">Ultra Ext.</div><div class="preset-detail">25i / 2x AA</div></div>
-              <div class="preset-card" onclick="setVpPreset(0, 45, 4500, 4, 1, 'Ultra Ext.+', this)"><div class="preset-name">Ultra Ext.+</div><div class="preset-detail">45i / 4x AA</div></div>
+          <div class="compare-box">
+            <div class="compare-header">
+              <span>COMPARISON PROFILE [B]</span>
+              <span id="compStatusB" style="color: var(--text-dim);">EMPTY</span>
             </div>
-          </div>
-        </div>
-
-        <!-- Viewport 2 -->
-        <div class="config-card" id="cfgCard2" style="display: none;">
-          <div class="config-card-header">Viewport 2 Configuration</div>
-          <div>
-            <div class="field-label">Topology</div>
-            <div class="visual-grid">
-              <div class="visual-card" onclick="setVpVisual(1, 0, 'Mandelbulb', this)"><div class="visual-title">Mandel</div><div class="visual-sub">Sphere</div></div>
-              <div class="visual-card active" onclick="setVpVisual(1, 1, 'Menger Cube', this)"><div class="visual-title">Menger</div><div class="visual-sub">Cube</div></div>
-              <div class="visual-card" onclick="setVpVisual(1, 2, 'Julia 4D', this)"><div class="visual-title">Julia</div><div class="visual-sub">4D Slice</div></div>
-              <div class="visual-card" onclick="setVpVisual(1, 3, 'Kleinian IFS', this)"><div class="visual-title">Klein</div><div class="visual-sub">Matrix</div></div>
-              <div class="visual-card" onclick="setVpVisual(1, 4, 'Nebula', this)"><div class="visual-title">Nebula</div><div class="visual-sub">Smoke</div></div>
-            </div>
-          </div>
-          <div>
-            <div class="field-label">Stress Preset</div>
-            <div class="presets-matrix">
-              <div class="preset-card" onclick="setVpPreset(1, 2, 250, 1, 0, 'Simple', this)"><div class="preset-name">Simple</div><div class="preset-detail">2i / 250s</div></div>
-              <div class="preset-card active" onclick="setVpPreset(1, 5, 1002, 1, 0, 'Standard', this)"><div class="preset-name">Standard</div><div class="preset-detail">5i / 1002s</div></div>
-              <div class="preset-card" onclick="setVpPreset(1, 7, 1500, 1, 0, 'Advanced', this)"><div class="preset-name">Advanced</div><div class="preset-detail">7i / 1500s</div></div>
-              <div class="preset-card" onclick="setVpPreset(1, 9, 2000, 1, 0, 'Extreme', this)"><div class="preset-name">Extreme</div><div class="preset-detail">9i / 2000s</div></div>
-              <div class="preset-card" onclick="setVpPreset(1, 25, 3000, 2, 1, 'Ultra Ext.', this)"><div class="preset-name">Ultra Ext.</div><div class="preset-detail">25i / 2x AA</div></div>
-              <div class="preset-card" onclick="setVpPreset(1, 45, 4500, 4, 1, 'Ultra Ext.+', this)"><div class="preset-name">Ultra Ext.+</div><div class="preset-detail">45i / 4x AA</div></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Viewport 3 -->
-        <div class="config-card" id="cfgCard3" style="display: none;">
-          <div class="config-card-header">Viewport 3 Configuration</div>
-          <div>
-            <div class="field-label">Topology</div>
-            <div class="visual-grid">
-              <div class="visual-card" onclick="setVpVisual(2, 0, 'Mandelbulb', this)"><div class="visual-title">Mandel</div><div class="visual-sub">Sphere</div></div>
-              <div class="visual-card" onclick="setVpVisual(2, 1, 'Menger Cube', this)"><div class="visual-title">Menger</div><div class="visual-sub">Cube</div></div>
-              <div class="visual-card" onclick="setVpVisual(2, 2, 'Julia 4D', this)"><div class="visual-title">Julia</div><div class="visual-sub">4D Slice</div></div>
-              <div class="visual-card active" onclick="setVpVisual(2, 3, 'Kleinian IFS', this)"><div class="visual-title">Klein</div><div class="visual-sub">Matrix</div></div>
-              <div class="visual-card" onclick="setVpVisual(2, 4, 'Nebula', this)"><div class="visual-title">Nebula</div><div class="visual-sub">Smoke</div></div>
-            </div>
-          </div>
-          <div>
-            <div class="field-label">Stress Preset</div>
-            <div class="presets-matrix">
-              <div class="preset-card" onclick="setVpPreset(2, 250, 1, 0, 'Simple', this)"><div class="preset-name">Simple</div><div class="preset-detail">2i / 250s</div></div>
-              <div class="preset-card" onclick="setVpPreset(2, 5, 1002, 1, 0, 'Standard', this)"><div class="preset-name">Standard</div><div class="preset-detail">5i / 1002s</div></div>
-              <div class="preset-card" onclick="setVpPreset(2, 7, 1500, 1, 0, 'Advanced', this)"><div class="preset-name">Advanced</div><div class="preset-detail">7i / 1500s</div></div>
-              <div class="preset-card" onclick="setVpPreset(2, 9, 2000, 1, 0, 'Extreme', this)"><div class="preset-name">Extreme</div><div class="preset-detail">9i / 2000s</div></div>
-              <div class="preset-card active" onclick="setVpPreset(2, 25, 3000, 2, 1, 'Ultra Ext.', this)"><div class="preset-name">Ultra Ext.</div><div class="preset-detail">25i / 2x AA</div></div>
-              <div class="preset-card" onclick="setVpPreset(2, 45, 4500, 4, 1, 'Ultra Ext.+', this)"><div class="preset-name">Ultra Ext.+</div><div class="preset-detail">45i / 4x AA</div></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Viewport 4 -->
-        <div class="config-card" id="cfgCard4" style="display: none;">
-          <div class="config-card-header">Viewport 4 Configuration</div>
-          <div>
-            <div class="field-label">Topology</div>
-            <div class="visual-grid">
-              <div class="visual-card" onclick="setVpVisual(3, 0, 'Mandelbulb', this)"><div class="visual-title">Mandel</div><div class="visual-sub">Sphere</div></div>
-              <div class="visual-card" onclick="setVpVisual(3, 1, 'Menger Cube', this)"><div class="visual-title">Menger</div><div class="visual-sub">Cube</div></div>
-              <div class="visual-card" onclick="setVpVisual(3, 2, 'Julia 4D', this)"><div class="visual-title">Julia</div><div class="visual-sub">4D Slice</div></div>
-              <div class="visual-card" onclick="setVpVisual(3, 3, 'Kleinian IFS', this)"><div class="visual-title">Klein</div><div class="visual-sub">Matrix</div></div>
-              <div class="visual-card active" onclick="setVpVisual(3, 4, 'Nebula', this)"><div class="visual-title">Nebula</div><div class="visual-sub">Smoke</div></div>
-            </div>
-          </div>
-          <div>
-            <div class="field-label">Stress Preset</div>
-            <div class="presets-matrix">
-              <div class="preset-card" onclick="setVpPreset(3, 2, 250, 1, 0, 'Simple', this)"><div class="preset-name">Simple</div><div class="preset-detail">2i / 250s</div></div>
-              <div class="preset-card" onclick="setVpPreset(3, 5, 1002, 1, 0, 'Standard', this)"><div class="preset-name">Standard</div><div class="preset-detail">5i / 1002s</div></div>
-              <div class="preset-card" onclick="setVpPreset(3, 7, 1500, 1, 0, 'Advanced', this)"><div class="preset-name">Advanced</div><div class="preset-detail">7i / 1500s</div></div>
-              <div class="preset-card" onclick="setVpPreset(3, 9, 2000, 1, 0, 'Extreme', this)"><div class="preset-name">Extreme</div><div class="preset-detail">9i / 2000s</div></div>
-              <div class="preset-card" onclick="setVpPreset(3, 25, 3000, 2, 1, 'Ultra Ext.', this)"><div class="preset-name">Ultra Ext.</div><div class="preset-detail">25i / 2x AA</div></div>
-              <div class="preset-card active" onclick="setVpPreset(3, 45, 4500, 4, 1, 'Ultra Ext.+', this)"><div class="preset-name">Ultra Ext.+</div><div class="preset-detail">45i / 4x AA</div></div>
+            <div id="compBodyB" style="font-size: 0.65rem; color: var(--text-dim); line-height: 1.6;">
+              Update your system or modify test stress, run another pass, and lock to Slot B to calculate exact performance deltas.
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Execution Controls Row -->
+      <!-- Execution Controls -->
       <div class="control-row">
         <select class="select-box" id="runDuration">
-          <option value="15">15s Run</option>
-          <option value="30">30s Run</option>
-          <option value="60">60s Run</option>
+          <option value="15">15s Duration</option>
+          <option value="30">30s Duration</option>
+          <option value="60">60s Stress Burn</option>
         </select>
         <button class="btn-run" onclick="executeSuite(true)">Execute Benchmark</button>
         <button class="btn-view" onclick="executeSuite(false)">Live Shader View</button>
@@ -888,12 +871,12 @@
   <div class="modal-sheet" id="evalModal">
     <div class="modal-box">
       <div class="modal-header">
-        <span>Benchmark Evaluation Report</span>
+        <span>Benchmark & Stability Diagnostic Report</span>
         <span id="reportTimestamp">--</span>
       </div>
 
       <div>
-        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); text-align: center; text-transform: uppercase;">Overall Benchmark Score</div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); text-align: center; text-transform: uppercase;">Overall Benchmark Score</div>
         <div class="score-output" id="evalScore">0</div>
         <div class="eval-subtitle" id="evalHwString">--</div>
       </div>
@@ -904,7 +887,8 @@
       </table>
 
       <div class="btn-action-row">
-        <button class="btn-pdf" onclick="downloadPdfReport()">↓ Download PDF Report</button>
+        <button class="btn-pdf" onclick="downloadPdfReport()">↓ Download PDF</button>
+        <button class="btn-save-ab" onclick="saveToCompareSlot()">Store in A/B Profiler</button>
         <button class="btn-dismiss" onclick="dismissEval()">Dismiss</button>
       </div>
     </div>
@@ -915,11 +899,20 @@
     let detectedCpuString = "x86 Platform";
     let currentLayout = 'single';
 
+    let liveScale = 1.0;
+    let overrideSteps = null;
+    let overrideIters = null;
+    let overrideSSAA = null;
+
+    let profileSlotA = null;
+    let profileSlotB = null;
+
+    // Viewport Pipeline States (Calibrated Defaults: Simple 2i, Standard 9i, Advanced 25i, Extreme 35i, Ultra 50i, Ultra+ 65i)
     const vpStates = [
-      { id: 0, visualId: 0, visualName: 'Mandelbulb', presetName: 'Standard', iters: 5, steps: 1002, aa: 1, shadows: 0, rotX: 0, rotY: 0, zoom: 2.4, isDragging: false, lastX: 0, lastY: 0, fpsHistory: [], gpuHistory: [], cpuHistory: [], vramHistory: [], rollingBuffer: [], lastTime: 0, lastFpsUpdate: 0, frameCounter: 0, jsTimeAccum: 0 },
-      { id: 1, visualId: 1, visualName: 'Menger Cube', presetName: 'Standard', iters: 5, steps: 1002, aa: 1, shadows: 0, rotX: 0, rotY: 0, zoom: 2.4, isDragging: false, lastX: 0, lastY: 0, fpsHistory: [], gpuHistory: [], cpuHistory: [], vramHistory: [], rollingBuffer: [], lastTime: 0, lastFpsUpdate: 0, frameCounter: 0, jsTimeAccum: 0 },
-      { id: 2, visualId: 3, visualName: 'Kleinian IFS', presetName: 'Ultra Ext.', iters: 25, steps: 3000, aa: 2, shadows: 1, rotX: 0, rotY: 0, zoom: 2.4, isDragging: false, lastX: 0, lastY: 0, fpsHistory: [], gpuHistory: [], cpuHistory: [], vramHistory: [], rollingBuffer: [], lastTime: 0, lastFpsUpdate: 0, frameCounter: 0, jsTimeAccum: 0 },
-      { id: 3, visualId: 4, visualName: 'Nebula', presetName: 'Ultra Ext.+', iters: 45, steps: 4500, aa: 4, shadows: 1, rotX: 0, rotY: 0, zoom: 2.4, isDragging: false, lastX: 0, lastY: 0, fpsHistory: [], gpuHistory: [], cpuHistory: [], vramHistory: [], rollingBuffer: [], lastTime: 0, lastFpsUpdate: 0, frameCounter: 0, jsTimeAccum: 0 }
+      { id: 0, visualId: 0, visualName: 'Mandelbulb', presetName: 'Standard', iters: 9, steps: 1002, aa: 1, shadows: 0, rotX: 0, rotY: 0, zoom: 2.4, isDragging: false, lastX: 0, lastY: 0, fpsHistory: [], ftHistory: [], gpuHistory: [], cpuHistory: [], vramHistory: [], rollingBuffer: [], lastTime: 0, lastFpsUpdate: 0, frameCounter: 0, jsTimeAccum: 0, spikes33: 0, spikes50: 0, contextLost: false },
+      { id: 1, visualId: 1, visualName: 'Menger Cube', presetName: 'Standard', iters: 9, steps: 1002, aa: 1, shadows: 0, rotX: 0, rotY: 0, zoom: 2.4, isDragging: false, lastX: 0, lastY: 0, fpsHistory: [], ftHistory: [], gpuHistory: [], cpuHistory: [], vramHistory: [], rollingBuffer: [], lastTime: 0, lastFpsUpdate: 0, frameCounter: 0, jsTimeAccum: 0, spikes33: 0, spikes50: 0, contextLost: false },
+      { id: 2, visualId: 3, visualName: 'Gyroid', presetName: 'Ultra Ext.', iters: 50, steps: 4000, aa: 4, shadows: 1, rotX: 0, rotY: 0, zoom: 2.4, isDragging: false, lastX: 0, lastY: 0, fpsHistory: [], ftHistory: [], gpuHistory: [], cpuHistory: [], vramHistory: [], rollingBuffer: [], lastTime: 0, lastFpsUpdate: 0, frameCounter: 0, jsTimeAccum: 0, spikes33: 0, spikes50: 0, contextLost: false },
+      { id: 3, visualId: 4, visualName: 'Torus Knot', presetName: 'Ultra Ext.+', iters: 65, steps: 5500, aa: 4, shadows: 1, rotX: 0, rotY: 0, zoom: 2.4, isDragging: false, lastX: 0, lastY: 0, fpsHistory: [], ftHistory: [], gpuHistory: [], cpuHistory: [], vramHistory: [], rollingBuffer: [], lastTime: 0, lastFpsUpdate: 0, frameCounter: 0, jsTimeAccum: 0, spikes33: 0, spikes50: 0, contextLost: false }
     ];
 
     const canvases = [
@@ -929,32 +922,66 @@
       document.getElementById('glcanvas4')
     ];
 
-    const glContexts = canvases.map(c => c.getContext('webgl', { powerPreference: "high-performance", antialias: false }));
+    const glContexts = canvases.map((c, idx) => {
+      const gl = c.getContext('webgl', { powerPreference: "high-performance", antialias: false });
+      c.addEventListener('webglcontextlost', (e) => {
+        e.preventDefault();
+        vpStates[idx].contextLost = true;
+        console.error(`CRITICAL: WebGL Context Lost on Viewport ${idx+1}`);
+      }, false);
+      return gl;
+    });
 
-    async function autoDetectHardware() {
-      const dbg = glContexts[0].getExtension('WEBGL_debug_renderer_info');
+    async function probeGpuFingerprint() {
+      const gl = glContexts[0];
+      const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+      let renderer = "Generic WebGL";
+      let driver = "Unknown Driver";
+
       if (dbg) {
-        const raw = glContexts[0].getParameter(dbg.UNMASKED_RENDERER_WEBGL);
-        if (raw && raw.length > 2) {
-          detectedGpuString = raw
-            .replace(/Direct3D.*|OpenGL.*|\(R\)|\(TM\)/g, '')
-            .replace(/ANGLE \(/g, '').replace(/\)/g, '')
-            .replace(/vs_\d+_\d+.*|ps_\d+_\d+.*/g, '')
-            .trim();
-        }
+        renderer = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
+        driver = gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL);
       }
-      document.getElementById('detectedGpuModel').innerText = detectedGpuString;
+      detectedGpuString = renderer;
+      document.getElementById('fpRenderer').innerText = renderer;
+      document.getElementById('fpDriver').innerText = driver;
 
-      const cores = navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} Logical Cores` : 'Multi-Core';
-      let arch = 'x86_64';
-      if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
-        try {
-          const uaData = await navigator.userAgentData.getHighEntropyValues(['architecture', 'bitness']);
-          if (uaData.architecture) arch = `${uaData.architecture} ${uaData.bitness || '64'}-bit`;
-        } catch (e) {}
-      }
-      detectedCpuString = `${cores} (${arch})`;
-      document.getElementById('detectedCpuArch').innerText = detectedCpuString;
+      const ua = navigator.userAgent;
+      let browser = "Chromium/WebKit";
+      if (ua.includes("Firefox")) browser = "Firefox Quantum";
+      else if (ua.includes("Edg")) browser = "Microsoft Edge";
+      else if (ua.includes("Chrome")) browser = "Google Chrome";
+      else if (ua.includes("Safari")) browser = "Apple Safari";
+      document.getElementById('fpBrowser').innerText = `${browser} (${navigator.platform})`;
+
+      const dpr = window.devicePixelRatio || 1;
+      document.getElementById('fpRes').innerText = `${window.screen.width}x${window.screen.height} (DPR: ${dpr.toFixed(2)})`;
+
+      const maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+      const maxViewport = gl.getParameter(gl.MAX_VIEWPORT_DIMS);
+      document.getElementById('fpLimits').innerText = `Tex: ${maxTex}px | Viewport: ${maxViewport[0]}px`;
+
+      const prec = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
+      document.getElementById('fpPrecision').innerText = `Float [-2^${prec.rangeMin}, 2^${prec.rangeMax}] (Prec: ${prec.precision} bits)`;
+    }
+
+    function switchLabTab(paneId, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(paneId).classList.add('active');
+    }
+
+    function updateLiveStress() {
+      liveScale = parseFloat(document.getElementById('rngResScale').value);
+      overrideSteps = parseInt(document.getElementById('rngRaySteps').value);
+      overrideIters = parseInt(document.getElementById('rngIters').value);
+      overrideSSAA = parseInt(document.getElementById('rngSSAA').value);
+
+      document.getElementById('lblResScale').innerText = `${liveScale.toFixed(2)}x Scale`;
+      document.getElementById('lblRaySteps').innerText = `${overrideSteps} steps`;
+      document.getElementById('lblIters').innerText = `${overrideIters} iters`;
+      document.getElementById('lblSSAA').innerText = `${overrideSSAA}x Supersampling`;
     }
 
     function setLayoutMode(mode) {
@@ -971,7 +998,6 @@
       document.getElementById('cfgCard2').style.display = (mode === 'dual' || mode === 'quad') ? 'flex' : 'none';
       document.getElementById('cfgCard3').style.display = (mode === 'quad') ? 'flex' : 'none';
       document.getElementById('cfgCard4').style.display = (mode === 'quad') ? 'flex' : 'none';
-
       document.getElementById('cfgHeader1').innerText = (mode === 'single') ? 'Viewport 1 Configuration' : 'Viewport 1 (Top-Left)';
     }
 
@@ -1004,7 +1030,6 @@
       gl.bufferData(gl.ARRAY_BUFFER, quadVertices, gl.STATIC_DRAW);
     });
 
-    // High-Precision Multi-Shader Generator with Original Kleinian IFS
     function buildFragmentShader(iterations, maxSteps, aaSamples, useShadows, visualId) {
       return `
         precision highp float;
@@ -1025,7 +1050,8 @@
           float r = 0.0;
           float power = 8.0;
 
-          for (int i = 0; i < ITERATIONS; i++) {
+          for (int i = 0; i < 80; i++) {
+            if (i >= ITERATIONS) break;
             r = length(z);
             if (r > 2.0) break;
 
@@ -1048,10 +1074,9 @@
         }
 
         float mapMenger(vec3 p) {
-          vec3 d = abs(p) - vec3(1.0);
-          float dist = min(max(d.x, max(d.y, d.z)), 0.0) + length(max(d, 0.0));
+          float d = sdBox(p, vec3(1.0));
           float s = 1.0;
-          for (int m = 0; m < 5; m++) {
+          for (int m = 0; m < 14; m++) {
             if (m >= ITERATIONS) break;
             vec3 a = mod(p * s, 2.0) - 1.0;
             s *= 3.0;
@@ -1060,9 +1085,9 @@
             float db = max(r.y, r.z);
             float dc = max(r.z, r.x);
             float c = (min(da, min(db, dc)) - 1.0) / s;
-            dist = max(dist, c);
+            d = max(d, c);
           }
-          return dist;
+          return d;
         }
 
         vec4 qSqr(vec4 q) {
@@ -1074,7 +1099,8 @@
           vec4 c = vec4(-0.4, 0.5, 0.3, 0.1) + 0.08 * sin(vec4(1.0, 1.3, 1.7, 2.0) * u_time * 0.2);
           vec4 dz = vec4(1.0, 0.0, 0.0, 0.0);
           float r2 = 0.0;
-          for (int i = 0; i < ITERATIONS; i++) {
+          for (int i = 0; i < 80; i++) {
+            if (i >= ITERATIONS) break;
             dz = 2.0 * vec4(z.x * dz.x - dot(z.yzw, dz.yzw), z.x * dz.yzw + dz.x * z.yzw + cross(z.yzw, dz.yzw));
             z = qSqr(z) + c;
             r2 = dot(z, z);
@@ -1083,57 +1109,33 @@
           return 0.25 * sqrt(r2) * log(r2) / max(length(dz), 0.001);
         }
 
-        // ORIGINAL KLEINIAN POLYHEDRAL IFS MATRIX
-        float mapKleinian(vec3 p) {
-          vec3 offset = vec3(1.15, 0.95, 0.85);
-          float scale = 1.65;
-          float dr = 1.0;
-          for (int i = 0; i < 18; i++) {
-            if (i >= ITERATIONS) break;
-            p = clamp(p, -offset, offset) * 2.0 - p;
-            float r2 = dot(p, p);
-            if (r2 < 0.25) {
-              float k = 1.0 / 0.25;
-              p *= k;
-              dr *= k;
-            } else if (r2 < 1.0) {
-              float k = 1.0 / r2;
-              p *= k;
-              dr *= k;
-            }
-            p = p * scale + offset;
-            dr = dr * abs(scale) + 1.0;
+        float mapGyroid(vec3 p) {
+          float scale = 3.8;
+          float g = 0.0;
+          float amp = 1.0;
+          for (int i = 1; i <= 14; i++) {
+            if (i > ITERATIONS) break;
+            vec3 q = p * (scale * float(i));
+            g += (abs(dot(sin(q), cos(q.zxy))) - 0.25) * (amp / float(i));
+            amp *= 0.55;
           }
-          return (length(p) - 1.2) / abs(dr);
+          return max(g / scale, length(p) - 1.4);
         }
 
-        float hash(vec3 p) {
-          p = fract(p * 0.3183099 + 0.1);
-          p *= 17.0;
-          return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
-        }
-
-        float noise(vec3 x) {
-          vec3 i = floor(x);
-          vec3 f = fract(x);
-          f = f * f * (3.0 - 2.0 * f);
-          return mix(
-            mix(mix(hash(i + vec3(0,0,0)), hash(i + vec3(1,0,0)), f.x),
-                mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y),
-            mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x),
-                mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y), f.z);
-        }
-
-        float fbm(vec3 p) {
-          float f = 0.0;
-          float amp = 0.5;
-          for (int i = 0; i < 6; i++) {
-            if (i >= ITERATIONS) break;
-            f += amp * noise(p);
-            p = p * 2.02 + vec3(1.2, 2.4, 3.6);
-            amp *= 0.5;
+        float mapTorusKnot(vec3 p) {
+          vec2 q = vec2(length(p.xy) - 1.1, p.z);
+          float a = atan(p.y, p.x);
+          float d = 1e5;
+          for (int k = 1; k <= 12; k++) {
+            if (k > ITERATIONS) break;
+            float rotAngle = a * (1.5 * float(k)) + u_time * 0.2;
+            float cosR = cos(rotAngle);
+            float sinR = sin(rotAngle);
+            vec2 qSub = mat2(cosR, -sinR, sinR, cosR) * q;
+            qSub = abs(qSub) - (0.2 / float(k));
+            d = min(d, length(max(qSub, 0.0)) + min(max(qSub.x, qSub.y), 0.0) - (0.07 / float(k)));
           }
-          return f;
+          return d;
         }
 
         float map(vec3 pos) {
@@ -1144,14 +1146,14 @@
           #elif VISUAL_TYPE == 2
             return mapJulia4D(pos);
           #elif VISUAL_TYPE == 3
-            return mapKleinian(pos);
+            return mapGyroid(pos);
           #else
-            return length(pos) - 1.6;
+            return mapTorusKnot(pos);
           #endif
         }
 
         vec3 calcNormal(vec3 pos, float t) {
-          float eps = clamp(0.0005 * t, 0.0003, 0.004);
+          float eps = clamp(0.0003 * t, 0.0002, 0.003);
           vec2 e = vec2(1.0, -1.0) * eps;
           return normalize(
             e.xyy * map(pos + e.xyy) +
@@ -1168,36 +1170,33 @@
           vec3 rd = normalize(uv.x * uu + uv.y * vv + 1.6 * ww);
 
           vec3 bg = mix(vec3(0.02, 0.03, 0.05), vec3(0.06, 0.09, 0.15), uv.y + 0.5);
+          float t = 0.1;
+          float hit = 0.0;
 
-          #if VISUAL_TYPE == 4
-            float dist = length(ro);
-            float tmin = max(0.0, dist - 1.8);
-            float tmax = dist + 1.8;
-            float stepSize = (tmax - tmin) / float(MAX_STEPS);
-            float t = tmin;
-            vec4 colAcc = vec4(0.0);
-
-            for (int i = 0; i < MAX_STEPS; i++) {
-              vec3 p = ro + rd * t;
-              if (length(p) < 1.7) {
-                float dens = fbm(p * 2.2 + vec3(0.0, u_time * 0.1, 0.0));
-                dens = clamp(dens * 2.5 - 0.35, 0.0, 1.0);
-
-                if (dens > 0.01) {
-                  vec3 emission = 0.85 + 0.55 * cos(vec3(0.05, 0.5, 0.95) + length(p) * 2.6 + dens * 2.4);
-                  vec4 col = vec4(emission * (dens * 2.0 + 0.3), dens * 0.18);
-                  col.rgb *= col.a;
-                  colAcc += col * (1.0 - colAcc.a);
-                  if (colAcc.a > 0.98) break;
-                }
-              }
-              t += stepSize;
+          for (int i = 0; i < MAX_STEPS; i++) {
+            vec3 p = ro + rd * t;
+            float d = map(p);
+            if (d < 0.0006 * (1.0 + t * 0.4)) {
+              hit = 1.0;
+              break;
             }
-            return mix(bg, colAcc.rgb * 1.6, colAcc.a);
+            if (t > 7.0) break;
+            t += max(d * 0.55, 0.001);
+          }
 
-          #else
-            float t = 0.1;
-            float hit = 0.0;
+          vec3 color = bg;
+          if (hit > 0.5) {
+            vec3 p = ro + rd * t;
+            vec3 n = calcNormal(p, t);
+
+            vec3 keyLight = normalize(vec3(1.2, 2.2, 1.5));
+            vec3 fillLight = normalize(vec3(-1.8, -0.6, -1.0));
+            vec3 rimLight = normalize(vec3(0.0, 1.5, -2.0));
+
+            float diffKey = max(dot(n, keyLight), 0.0) * 1.15;
+            float diffFill = max(dot(n, fillLight), 0.0) * 0.55;
+            float diffRim = max(dot(n, rimLight), 0.0) * 0.35;
+            float fresnel = pow(clamp(1.0 + dot(n, rd), 0.0, 1.0), 3.0) * 0.5;
 
             vec3 paletteOffset = vec3(0.05, 0.55, 0.95);
             #if VISUAL_TYPE == 1
@@ -1205,50 +1204,34 @@
             #elif VISUAL_TYPE == 2
               paletteOffset = vec3(0.8, 0.15, 0.95);
             #elif VISUAL_TYPE == 3
-              paletteOffset = vec3(0.8, 0.4, 0.1);
+              paletteOffset = vec3(0.1, 0.85, 0.4);
+            #elif VISUAL_TYPE == 4
+              paletteOffset = vec3(0.95, 0.3, 0.6);
             #endif
 
-            for (int i = 0; i < MAX_STEPS; i++) {
-              vec3 p = ro + rd * t;
-              float d = map(p);
+            vec3 baseColor = 0.75 + 0.45 * cos(paletteOffset + length(p) * 2.2);
+            vec3 hal = normalize(keyLight - rd);
+            float spec = pow(max(dot(n, hal), 0.0), 16.0) * 0.4;
 
-              if (d < 0.0008 * (1.0 + t * 0.5)) {
-                hit = 1.0;
-                break;
+            #if USE_SHADOWS == 1
+              float occ = 0.0;
+              float sca = 1.0;
+              for (int a = 0; a < 5; a++) {
+                float hr = 0.01 + 0.03 * float(a);
+                float dd = map(n * hr + p);
+                occ += -(dd - hr) * sca;
+                sca *= 0.85;
               }
-              if (t > 7.0) break;
-              t += max(d * 0.65, 0.002);
-            }
+              float ao = clamp(1.0 - 2.0 * occ, 0.25, 1.0);
+            #else
+              float ao = 1.0;
+            #endif
 
-            vec3 color = bg;
-
-            if (hit > 0.5) {
-              vec3 p = ro + rd * t;
-              vec3 n = calcNormal(p, t);
-
-              vec3 keyLight = normalize(vec3(1.2, 2.2, 1.5));
-              vec3 fillLight = normalize(vec3(-1.8, -0.6, -1.0));
-              vec3 rimLight = normalize(vec3(0.0, 1.5, -2.0));
-
-              float diffKey = max(dot(n, keyLight), 0.0) * 1.15;
-              float diffFill = max(dot(n, fillLight), 0.0) * 0.55;
-              float diffRim = max(dot(n, rimLight), 0.0) * 0.35;
-              float fresnel = pow(clamp(1.0 + dot(n, rd), 0.0, 1.0), 3.0) * 0.5;
-
-              vec3 baseColor = 0.75 + 0.45 * cos(paletteOffset + length(p) * 2.2);
-
-              vec3 hal = normalize(keyLight - rd);
-              float spec = pow(max(dot(n, hal), 0.0), 16.0) * 0.4;
-
-              vec3 diffuseTotal = baseColor * (diffKey + diffFill + diffRim + 0.45);
-              color = diffuseTotal;
-              color += vec3(0.6, 0.85, 1.0) * fresnel;
-              color += vec3(1.0, 1.0, 1.0) * spec;
-
-              color = mix(color, bg, 1.0 - exp(-0.03 * t * t));
-            }
-            return color;
-          #endif
+            vec3 diffuseTotal = baseColor * (diffKey + diffFill + diffRim + 0.45) * ao;
+            color = diffuseTotal + vec3(0.6, 0.85, 1.0) * fresnel * ao + vec3(1.0) * spec;
+            color = mix(color, bg, 1.0 - exp(-0.03 * t * t));
+          }
+          return color;
         }
 
         void main() {
@@ -1258,7 +1241,6 @@
 
           vec3 ro = vec3(dist * sin(yaw) * cos(pitch), dist * sin(pitch), dist * cos(yaw) * cos(pitch));
           vec3 ta = vec3(0.0);
-
           vec3 finalColor = vec3(0.0);
 
           #if AA_SAMPLES == 4
@@ -1266,29 +1248,25 @@
             vec2 o2 = vec2( 0.25, -0.25) / u_resolution.y;
             vec2 o3 = vec2(-0.25,  0.25) / u_resolution.y;
             vec2 o4 = vec2( 0.25,  0.25) / u_resolution.y;
-
-            vec2 uvBase = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / u_resolution.y;
-            finalColor += renderPass(uvBase + o1, ro, ta);
-            finalColor += renderPass(uvBase + o2, ro, ta);
-            finalColor += renderPass(uvBase + o3, ro, ta);
-            finalColor += renderPass(uvBase + o4, ro, ta);
+            vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / u_resolution.y;
+            finalColor += renderPass(uv + o1, ro, ta);
+            finalColor += renderPass(uv + o2, ro, ta);
+            finalColor += renderPass(uv + o3, ro, ta);
+            finalColor += renderPass(uv + o4, ro, ta);
             finalColor *= 0.25;
           #elif AA_SAMPLES == 2
             vec2 o1 = vec2(-0.25, -0.25) / u_resolution.y;
             vec2 o2 = vec2( 0.25,  0.25) / u_resolution.y;
-
-            vec2 uvBase = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / u_resolution.y;
-            finalColor += renderPass(uvBase + o1, ro, ta);
-            finalColor += renderPass(uvBase + o2, ro, ta);
+            vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / u_resolution.y;
+            finalColor += renderPass(uv + o1, ro, ta);
+            finalColor += renderPass(uv + o2, ro, ta);
             finalColor *= 0.5;
           #else
             vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / u_resolution.y;
             finalColor = renderPass(uv, ro, ta);
           #endif
 
-          finalColor = pow(finalColor, vec3(0.9));
-
-          gl_FragColor = vec4(finalColor, 1.0);
+          gl_FragColor = vec4(pow(finalColor, vec3(0.9)), 1.0);
         }
       `;
     }
@@ -1300,12 +1278,16 @@
       const gl = glContexts[index];
       const state = vpStates[index];
 
+      const iters = overrideIters !== null ? overrideIters : state.iters;
+      const steps = overrideSteps !== null ? overrideSteps : state.steps;
+      const aa = overrideSSAA !== null ? overrideSSAA : state.aa;
+
       const vs = gl.createShader(gl.VERTEX_SHADER);
       gl.shaderSource(vs, vsSource);
       gl.compileShader(vs);
 
       const fs = gl.createShader(gl.FRAGMENT_SHADER);
-      gl.shaderSource(fs, buildFragmentShader(state.iters, state.steps, state.aa, state.shadows, state.visualId));
+      gl.shaderSource(fs, buildFragmentShader(iters, steps, aa, state.shadows, state.visualId));
       gl.compileShader(fs);
 
       const prog = gl.createProgram();
@@ -1344,7 +1326,7 @@
     });
 
     function resizeCanvas(gl, canvas) {
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = (window.devicePixelRatio || 1) * liveScale;
       const w = Math.floor(canvas.clientWidth * dpr);
       const h = Math.floor(canvas.clientHeight * dpr);
       if (canvas.width !== w || canvas.height !== h) {
@@ -1385,8 +1367,11 @@
         box.style.display = isActive ? 'block' : 'none';
 
         if (isActive) {
-          document.getElementById(`hudTitle${i+1}`).innerText = `VP${i+1}: ${vpStates[i].visualName.toUpperCase()}`;
-          document.getElementById(`hudSpec${i+1}`).innerText = `${vpStates[i].presetName} (${vpStates[i].iters}i/${vpStates[i].steps}s)`;
+          const s = vpStates[i];
+          const iters = overrideIters !== null ? overrideIters : s.iters;
+          const steps = overrideSteps !== null ? overrideSteps : s.steps;
+          document.getElementById(`hudTitle${i+1}`).innerText = `VP${i+1}: ${s.visualName.toUpperCase()}`;
+          document.getElementById(`hudSpec${i+1}`).innerText = `${s.presetName} (${iters}i/${steps}s)`;
         }
       }
 
@@ -1399,10 +1384,14 @@
 
       vpStates.forEach(s => {
         s.fpsHistory = [];
+        s.ftHistory = [];
         s.gpuHistory = [];
         s.cpuHistory = [];
         s.vramHistory = [];
         s.rollingBuffer = [];
+        s.spikes33 = 0;
+        s.spikes50 = 0;
+        s.contextLost = false;
         s.lastTime = performance.now();
         s.lastFpsUpdate = performance.now();
         s.frameCounter = 0;
@@ -1421,6 +1410,24 @@
       document.getElementById('masterControls').style.display = 'none';
       document.getElementById('viewportContainer').style.display = 'none';
       document.getElementById('launcherOverlay').classList.remove('hidden');
+    }
+
+    function computeStabilityScore(s) {
+      if (s.contextLost) return 0;
+      const n = s.ftHistory.length;
+      if (n < 10) return 100;
+
+      const meanFt = s.ftHistory.reduce((a, b) => a + b, 0) / n;
+      const variance = s.ftHistory.reduce((a, b) => a + Math.pow(b - meanFt, 2), 0) / n;
+      const stdDev = Math.sqrt(variance);
+
+      let score = 100.0;
+      const cv = stdDev / meanFt;
+      score -= cv * 45.0;
+      score -= (s.spikes33 / n) * 30.0;
+      score -= (s.spikes50 / n) * 60.0;
+
+      return Math.max(0, Math.min(100, Math.round(score)));
     }
 
     function completeBenchmark() {
@@ -1447,10 +1454,24 @@
         const maxCpu = s.cpuHistory.length > 0 ? Math.max(...s.cpuHistory) : 0;
         const maxVram = s.vramHistory.length > 0 ? Math.max(...s.vramHistory) : 0;
 
-        const factor = ((s.iters * s.steps) / 5010) * s.aa * (s.shadows ? 1.5 : 1.0);
-        const score = Math.round(avgFps * 100 * factor);
+        const stability = computeStabilityScore(s);
+        const iters = overrideIters !== null ? overrideIters : s.iters;
+        const steps = overrideSteps !== null ? overrideSteps : s.steps;
+        const aa = overrideSSAA !== null ? overrideSSAA : s.aa;
 
-        results.push({ name: s.visualName, preset: s.presetName, avgFps, maxFps, minFps, low1Fps, maxGpu, maxCpu, maxVram, score });
+        const factor = ((iters * steps) / 5010) * aa * (s.shadows ? 1.5 : 1.0) * liveScale;
+        const score = Math.round(avgFps * 100 * factor * (stability / 100));
+
+        results.push({
+          name: s.visualName,
+          preset: s.presetName,
+          avgFps, maxFps, minFps, low1Fps,
+          maxGpu, maxCpu, maxVram,
+          stability,
+          spikes: s.spikes33 + s.spikes50,
+          contextLost: s.contextLost,
+          score
+        });
       }
 
       const totalScore = Math.round(results.reduce((acc, r) => acc + r.score, 0) / count);
@@ -1467,9 +1488,9 @@
 
       document.getElementById('reportTimestamp').innerText = finalReportData.timestamp;
       document.getElementById('evalScore').innerText = finalReportData.score;
-      document.getElementById('evalHwString').innerText = `${detectedGpuString} • ${currentLayout.toUpperCase()} MODE (${count} VIEWPORTS)`;
+      document.getElementById('evalHwString').innerText = `${detectedGpuString} • ${currentLayout.toUpperCase()} MODE (${count} PIPELINES)`;
 
-      let headHtml = `<tr><th>Telemetry Metric</th>`;
+      let headHtml = `<tr><th>Telemetry / Stability Metric</th>`;
       for (let i = 0; i < count; i++) {
         headHtml += `<th>VP${i+1}: ${results[i].name}</th>`;
       }
@@ -1478,12 +1499,14 @@
 
       const metrics = [
         { label: "Stress Preset", key: "preset", format: v => `<strong>${v}</strong>` },
-        { label: "Average FPS", key: "avgFps", format: v => `<strong>${v} FPS</strong>` },
-        { label: "Framerate Range", key: "range", format: (v, r) => `<strong>${r.maxFps} / ${r.minFps} FPS</strong>` },
+        { label: "Stability Score", key: "stability", format: v => `<strong style="color: ${v > 85 ? 'var(--success)' : 'var(--danger)'};">${v}% ${v > 85 ? '(SOLID)' : '(UNSTABLE)'}</strong>` },
+        { label: "Micro-Stutter Spikes", key: "spikes", format: (v, r) => `<strong>${v} frame spikes ${r.contextLost ? '(CRASHED)' : ''}</strong>` },
+        { label: "Average Framerate", key: "avgFps", format: v => `<strong>${v} FPS</strong>` },
+        { label: "Framerate Range (Max/Min)", key: "range", format: (v, r) => `<strong>${r.maxFps} / ${r.minFps} FPS</strong>` },
         { label: "1% Low Framerate", key: "low1Fps", format: v => `<strong>${v} FPS</strong>` },
-        { label: "Peak GPU Load", key: "maxGpu", format: v => `<strong>${v}%</strong>` },
-        { label: "Peak CPU Dispatch", key: "maxCpu", format: v => `<strong>${v}%</strong>` },
-        { label: "VRAM Transfer Rate", key: "maxVram", format: v => `<strong>${v.toFixed(2)} GB/s</strong>` }
+        { label: "Peak GPU Saturation", key: "maxGpu", format: v => `<strong>${v}%</strong>` },
+        { label: "Peak CPU Thread Dispatch", key: "maxCpu", format: v => `<strong>${v}%</strong>` },
+        { label: "VRAM Memory Bandwidth", key: "maxVram", format: v => `<strong>${v.toFixed(2)} GB/s</strong>` }
       ];
 
       let bodyHtml = ``;
@@ -1504,6 +1527,39 @@
       abortExecution();
     }
 
+    function saveToCompareSlot() {
+      if (!profileSlotA) {
+        profileSlotA = JSON.parse(JSON.stringify(finalReportData));
+        document.getElementById('compStatusA').innerText = "STORED";
+        document.getElementById('compStatusA').style.color = "var(--success)";
+        document.getElementById('compBodyA').innerHTML = `
+          <strong>Score: ${profileSlotA.score}</strong><br>
+          GPU: ${profileSlotA.adapter}<br>
+          Avg FPS: ${profileSlotA.results[0].avgFps} | Stability: ${profileSlotA.results[0].stability}%<br>
+          Date: ${profileSlotA.timestamp}
+        `;
+        alert("Run data locked to Profile Slot A (Baseline). Make your system changes and run another test for Slot B.");
+      } else {
+        profileSlotB = JSON.parse(JSON.stringify(finalReportData));
+        document.getElementById('compStatusB').innerText = "STORED";
+        document.getElementById('compStatusB').style.color = "var(--accent)";
+
+        const deltaScore = Math.round(((parseInt(profileSlotB.score.replace(/,/g, '')) - parseInt(profileSlotA.score.replace(/,/g, ''))) / parseInt(profileSlotA.score.replace(/,/g, ''))) * 100);
+        const deltaFps = profileSlotB.results[0].avgFps - profileSlotA.results[0].avgFps;
+
+        document.getElementById('compBodyB').innerHTML = `
+          <strong>Score: ${profileSlotB.score} (${deltaScore >= 0 ? '+' : ''}${deltaScore}%)</strong><br>
+          GPU: ${profileSlotB.adapter}<br>
+          Avg FPS: ${profileSlotB.results[0].avgFps} (${deltaFps >= 0 ? '+' : ''}${deltaFps} FPS)<br>
+          Stability: ${profileSlotB.results[0].stability}%<br>
+          Date: ${profileSlotB.timestamp}
+        `;
+        alert(`Comparison Complete! Score Delta: ${deltaScore >= 0 ? '+' : ''}${deltaScore}%`);
+      }
+      dismissEval();
+      switchLabTab('tab-compare', document.querySelectorAll('.tab-btn')[2]);
+    }
+
     function downloadPdfReport() {
       if (!window.jspdf || !window.jspdf.jsPDF) return;
       const { jsPDF } = window.jspdf;
@@ -1515,43 +1571,44 @@
       doc.setFont('courier', 'bold');
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(14);
-      doc.text("VOLUMESHADER_BM • MULTI-PIPELINE REPORT", 14, 18);
+      doc.text("VOLUMESHADER_BM • LAB DIAGNOSTIC REPORT", 14, 18);
 
-      doc.setFontSize(8);
+      doc.setFontSize(7);
       doc.setTextColor(130, 130, 130);
       doc.text(`TIMESTAMP: ${finalReportData.timestamp}`, 14, 24);
-      doc.text(`LAYOUT: ${finalReportData.layout.toUpperCase()} (${finalReportData.results.length} VIEWPORTS)`, 14, 28);
+      doc.text(`PIPELINE LAYOUT: ${finalReportData.layout.toUpperCase()} (${finalReportData.results.length} ACTIVE PIPELINES)`, 14, 28);
 
       doc.setDrawColor(50, 50, 50);
       doc.line(14, 32, 196, 32);
 
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(9);
-      doc.text("OVERALL COMPOSITE SCORE", 14, 42);
+      doc.text("COMPOSITE SYSTEM SCORE", 14, 40);
       doc.setFontSize(26);
-      doc.text(finalReportData.score, 14, 52);
+      doc.text(finalReportData.score, 14, 50);
 
-      doc.setFontSize(8);
+      doc.setFontSize(7);
       doc.setTextColor(180, 180, 180);
-      doc.text(`GPU: ${finalReportData.adapter}`, 14, 58);
-      doc.text(`CPU: ${finalReportData.cpu}`, 14, 62);
+      doc.text(`GPU ADAPTER: ${finalReportData.adapter}`, 14, 56);
+      doc.text(`CPU PLATFORM: ${finalReportData.cpu}`, 14, 60);
 
       doc.setDrawColor(50, 50, 50);
-      doc.line(14, 68, 196, 68);
+      doc.line(14, 64, 196, 64);
 
-      let y = 78;
-      doc.setFontSize(8);
+      let y = 72;
+      doc.setFontSize(7);
       finalReportData.results.forEach((r, idx) => {
         doc.setFillColor(15, 15, 15);
-        doc.rect(14, y - 4, 182, 12, 'F');
+        doc.rect(14, y - 4, 182, 16, 'F');
         doc.setTextColor(255, 255, 255);
         doc.text(`VP${idx+1}: ${r.name} (${r.preset})`, 18, y + 1);
         doc.setTextColor(180, 180, 180);
-        doc.text(`AVG: ${r.avgFps} FPS | LOW: ${r.low1Fps} FPS | GPU: ${r.maxGpu}% | VRAM: ${r.maxVram.toFixed(2)} GB/s`, 18, y + 6);
-        y += 15;
+        doc.text(`FPS: ${r.avgFps} (Max ${r.maxFps} / Min ${r.minFps}) | Low: ${r.low1Fps} FPS`, 18, y + 5);
+        doc.text(`STABILITY: ${r.stability}% | SPIKES: ${r.spikes} | GPU LOAD: ${r.maxGpu}% | VRAM: ${r.maxVram.toFixed(2)} GB/s`, 18, y + 9);
+        y += 19;
       });
 
-      doc.save(`VolumeShader_Report_${Date.now()}.pdf`);
+      doc.save(`VolumeShader_LabReport_${Date.now()}.pdf`);
     }
 
     function render(now) {
@@ -1580,7 +1637,11 @@
         state.lastTime = now;
         state.frameCounter++;
         state.rollingBuffer.push(delta);
+        state.ftHistory.push(delta);
         if (state.rollingBuffer.length > 60) state.rollingBuffer.shift();
+
+        if (delta > 33.33) state.spikes33++;
+        if (delta > 50.00) state.spikes50++;
 
         gl.uniform2f(uLocs.uRes, canvas.width, canvas.height);
         gl.uniform1f(uLocs.uTime, now * 0.001);
@@ -1602,7 +1663,9 @@
           const cpuLoad = Math.min(100, Math.round((state.jsTimeAccum / interval) * 100));
           state.cpuHistory.push(cpuLoad);
 
-          const bytesPerFrame = (canvas.width * canvas.height) * state.aa * (state.steps * 0.35) * 16;
+          const curSteps = overrideSteps !== null ? overrideSteps : state.steps;
+          const curAA = overrideSSAA !== null ? overrideSSAA : state.aa;
+          const bytesPerFrame = (canvas.width * canvas.height) * curAA * (curSteps * 0.35) * 16;
           const vramGBs = (bytesPerFrame / (delta / 1000)) / 1073741824;
           state.vramHistory.push(vramGBs);
 
@@ -1611,12 +1674,7 @@
           document.getElementById(`gpuReadout${i+1}`).innerText = `${gpuEstimate}%`;
           document.getElementById(`cpuReadout${i+1}`).innerText = `${Math.max(1, cpuLoad)}%`;
           document.getElementById(`vramReadout${i+1}`).innerText = `${vramGBs.toFixed(2)} GB/s`;
-
-          if (state.rollingBuffer.length >= 20) {
-            const sorted = [...state.rollingBuffer].sort((a, b) => a - b);
-            const low1 = Math.round(1000 / sorted[Math.floor(sorted.length * 0.95)]);
-            document.getElementById(`lowReadout${i+1}`).innerText = `${low1} FPS`;
-          }
+          document.getElementById(`stabReadout${i+1}`).innerText = `${computeStabilityScore(state)}%`;
 
           state.frameCounter = 0;
           state.jsTimeAccum = 0;
@@ -1627,7 +1685,7 @@
       animId = requestAnimationFrame(render);
     }
 
-    autoDetectHardware();
+    probeGpuFingerprint();
   </script>
 </body>
 </html>
